@@ -27,7 +27,6 @@ if (isset($_POST['tambah'])) {
                      VALUES ('$nama', '$kategori', '$harga', '$deskripsi', '$foto')";
                      
     mysqli_query($conn, $query_insert);
-    // Redirect ke halaman list menu (menu.php) setelah berhasil
     echo "<script>alert('Menu berhasil ditambahkan!'); window.location='menu.php';</script>";
 }
 ?>
@@ -40,42 +39,96 @@ if (isset($_POST['tambah'])) {
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <style>
+        /* --- CSS GLOBAL (Sama dengan Dashboard) --- */
         :root {
-            --primary-color: #FF5722;
-            --bg-light: #f7f7f7;
-            --text-dark: #333;
+            --theme-primary: #FF5722;
+            --bg-light: #f4f6f9;
+            --text-dark: #1f2937;
         }
+
         body {
+            margin: 0;
             font-family: 'Poppins', sans-serif;
             background-color: var(--bg-light);
-            margin: 0;
-            padding: 0;
-            min-height: 100vh;
+            color: var(--text-dark);
         }
-        .main-wrapper {
-            width: 100%;
-            min-height: 100vh;
+
+        /* Layout Wrapper Utama */
+        .dashboard-wrapper {
+            padding: 20px;
             display: flex;
-            background: white;
-            border-radius: 0;
-            box-shadow: none;
+            gap: 20px;
+            min-height: 100vh;
+            box-sizing: border-box;
         }
-        
-        /* KOLOM KIRI: FORMULIR INPUT */
-        .form-section {
+
+        /* --- SIDEBAR (Sama persis dengan Dashboard) --- */
+        .sidebar {
+            width: 70px;
+            background-color: white;
+            border-radius: 15px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+            padding: 20px 0;
+            flex-shrink: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            height: fit-content;
+            min-height: 80vh;
+        }
+        .nav-link {
+            padding: 10px;
+            margin: 5px 0;
+            color: #9ca3af;
+            font-size: 20px;
+            transition: color 0.2s, background-color 0.2s;
+            border-radius: 8px;
+            text-decoration: none;
+        }
+        .nav-link:hover, .nav-link.active {
+            color: var(--theme-primary);
+            background-color: #fcebeb;
+        }
+
+        /* --- KONTEN FORMULIR (Area Kanan) --- */
+        .form-content {
+            flex-grow: 1;
+            display: flex; /* Flex untuk membagi Form dan Preview */
+            gap: 20px;
+        }
+
+        /* Bagian Kiri: Input */
+        .form-card {
             flex: 2;
-            padding: 40px;
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
         }
-        .form-header {
-            margin-bottom: 30px;
+
+        .header-action {
+            margin-bottom: 20px;
             border-bottom: 1px solid #eee;
             padding-bottom: 15px;
         }
-        .form-header h2 {
-            color: var(--text-dark);
-            font-size: 24px;
+        .header-action h2 {
             margin: 0;
+            font-size: 22px;
+            font-weight: 600;
         }
+        .back-link {
+            text-decoration: none;
+            color: #999;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            margin-bottom: 5px;
+            transition: color 0.2s;
+        }
+        .back-link:hover { color: var(--theme-primary); }
+
+        /* Styling Input */
         .input-group {
             display: flex;
             gap: 20px;
@@ -83,6 +136,14 @@ if (isset($_POST['tambah'])) {
         }
         .form-control {
             flex: 1;
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            font-size: 13px;
+            font-weight: 500;
+            margin-bottom: 5px;
+            color: #555;
         }
         input[type="text"],
         input[type="number"],
@@ -94,79 +155,86 @@ if (isset($_POST['tambah'])) {
             border-radius: 8px;
             box-sizing: border-box;
             font-family: inherit;
+            font-size: 14px;
+            background-color: #fff;
         }
         textarea {
             height: 100px;
             resize: vertical;
         }
         .btn-submit {
-            background-color: var(--primary-color);
+            background-color: var(--theme-primary);
             color: white;
             padding: 12px 20px;
             border: none;
             border-radius: 8px;
             cursor: pointer;
             font-weight: 600;
-            margin-top: 20px;
+            margin-top: 10px;
             width: 100%;
+            transition: background 0.2s;
         }
-        
-        /* KOLOM KANAN: PREVIEW DINAMIS */
-        .summary-section {
+        .btn-submit:hover {
+            background-color: #e64a19;
+        }
+
+        /* Bagian Kanan: Preview */
+        .preview-card {
             flex: 1;
-            background-color: var(--bg-light);
-            padding: 40px 30px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            text-align: center;
-        }
-        .menu-preview {
             background: white;
-            padding: 20px;
-            border-radius: 12px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-            width: 90%;
-            overflow: hidden;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            text-align: center;
+            height: fit-content;
+        }
+        .preview-card h3 {
+            font-size: 16px;
+            color: #999;
+            margin-top: 0;
+            margin-bottom: 20px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
         }
         .preview-img-placeholder {
             width: 100%;
-            height: 150px;
-            background-color: #ddd;
-            border-radius: 8px;
-            margin-bottom: 15px;
-            /* Style untuk gambar preview yang di-load oleh JS */
+            height: 200px;
+            background-color: #f4f6f9;
+            border-radius: 12px;
+            margin-bottom: 20px;
             background-size: cover;
             background-position: center;
             background-repeat: no-repeat;
             display: flex;
             justify-content: center;
             align-items: center;
-            color: #666;
-            font-size: 14px;
+            color: #999;
+            font-size: 13px;
+            border: 2px dashed #ddd;
         }
         .menu-info {
             text-align: left;
         }
         #display_nama {
-            font-size: 18px;
+            font-size: 20px;
             font-weight: 700;
             display: block;
             margin-bottom: 5px;
+            color: var(--text-dark);
         }
         #display_harga {
-            color: var(--primary-color);
-            font-size: 20px;
+            color: var(--theme-primary);
+            font-size: 22px;
             font-weight: 700;
             display: block;
             margin-top: 5px;
         }
         #display_deskripsi {
-            font-size: 12px;
+            font-size: 13px;
             color: #666;
             margin-top: 10px;
             display: block;
+            line-height: 1.6;
         }
     </style>
     <script>
@@ -179,9 +247,7 @@ if (isset($_POST['tambah'])) {
             return true;
         }
 
-        // =========================================================
         // JAVASCRIPT UNTUK PREVIEW DINAMIS
-        // =========================================================
         document.addEventListener('DOMContentLoaded', function() {
             const namaInput = document.getElementById('nama_menu_input');
             const kategoriInput = document.getElementById('kategori_input');
@@ -194,12 +260,9 @@ if (isset($_POST['tambah'])) {
             const previewDeskripsi = document.getElementById('display_deskripsi');
             const previewImg = document.getElementById('image_preview');
 
-            // FIX: Fungsi formatRupiah diperbarui untuk mengatasi masalah pemisah ribuan
             function formatRupiah(number) {
                 const num = Number(number);
                 if (isNaN(num) || num === 0) return 'Rp 0';
-            
-                // Menggunakan toLocaleString dengan opsi eksplisit untuk memastikan format ribuan IDR
                 return 'Rp ' + num.toLocaleString('id-ID', {
                     minimumFractionDigits: 0,
                     maximumFractionDigits: 0
@@ -207,15 +270,11 @@ if (isset($_POST['tambah'])) {
             }
 
             function updateSummary() {
-                // Update Nama
                 previewNama.innerHTML = (namaInput.value || 'Nama Menu') + 
                                         ' <span style="font-weight: 400; font-size: 14px; color: #999;">(' + (kategoriInput.value || 'Kategori') + ')</span>';
-
-                // Update Harga
+                
                 const hargaValue = hargaInput.value || 0;
                 previewHarga.innerText = formatRupiah(hargaValue);
-
-                // Update Deskripsi
                 previewDeskripsi.innerText = (deskripsiInput.value || 'Deskripsi singkat menu akan muncul di sini...');
             }
 
@@ -225,76 +284,89 @@ if (isset($_POST['tambah'])) {
                     const reader = new FileReader();
                     reader.onload = function(e) {
                         previewImg.style.backgroundImage = `url('${e.target.result}')`;
-                        previewImg.innerHTML = ''; // Hapus teks placeholder
+                        previewImg.innerHTML = ''; 
+                        previewImg.style.border = 'none';
                     };
                     reader.readAsDataURL(file);
                 } else {
                     previewImg.style.backgroundImage = 'none';
                     previewImg.innerHTML = 'Foto Menu';
+                    previewImg.style.border = '2px dashed #ddd';
                 }
             }
 
-            // Tambahkan event listeners
             namaInput.addEventListener('input', updateSummary);
             kategoriInput.addEventListener('input', updateSummary);
             hargaInput.addEventListener('input', updateSummary);
             deskripsiInput.addEventListener('input', updateSummary);
             fotoInput.addEventListener('change', previewImage);
 
-            // Inisialisasi tampilan awal
             updateSummary();
         });
+
+        function logoutConfirm() {
+            return confirm("Yakin mau logout dari akun admin?");
+        }
     </script>
 </head>
 <body>
 
-<a href="menu.php" style="color: var(--primary-color); text-decoration: none; font-weight: 600; margin-bottom: 15px; display: block; padding-left: 30px;">← Kembali ke Daftar Menu</a>
-
-<div class="main-wrapper">
+<div class="dashboard-wrapper">
     
-    <div class="form-section">
-        <div class="form-header">
-            <h2>Step 01: Input Menu Baru</h2>
-            <p style="color: #666; font-size: 14px;">Masukkan detail lengkap menu baru untuk ZIFOOD.</p>
-        </div>
-
-        <form name="menuForm" method="POST" enctype="multipart/form-data" onsubmit="return validateForm()">
-            <div class="input-group">
-                <div class="form-control">
-                    <label>Nama Menu</label>
-                    <input type="text" name="nama_menu" id="nama_menu_input" placeholder="Contoh: Nasi Goreng Spesial" required>
-                </div>
-                <div class="form-control">
-                    <label>Kategori</label>
-                    <input type="text" name="kategori" id="kategori_input" placeholder="Contoh: Rice Bowl / Dessert" required>
-                </div>
-            </div>
-
-            <div class="input-group">
-                <div class="form-control">
-                    <label>Harga (Rp)</label>
-                    <input type="number" name="harga" id="harga_input" placeholder="Contoh: 15000" required>
-                </div>
-                <div class="form-control">
-                    <label>Foto Menu</label>
-                    <input type="file" name="foto" id="foto_input" required>
-                </div>
-            </div>
-
-            <div class="form-control">
-                <label>Deskripsi Menu</label>
-                <textarea name="deskripsi" id="deskripsi_input" placeholder="Jelaskan secara singkat menu ini..." required></textarea>
-            </div>
-            
-            <button type="submit" name="tambah" class="btn-submit">
-                <i class="fas fa-plus"></i> Tambah & Simpan Menu
-            </button>
-        </form>
+    <div class="sidebar">
+        <a href="dashboard.admin.php" class="nav-link" title="Dashboard"><i class="fas fa-chart-line"></i></a>
+        <a href="menu.php" class="nav-link" title="Kelola Menu"><i class="fas fa-utensils"></i></a>
+        
+        <a href="tambah.php" class="nav-link active" title="Tambah Menu"><i class="fas fa-plus"></i></a>
+        
+        <a href="pesanan.php" class="nav-link" title="Kelola Pesanan"><i class="fas fa-receipt"></i></a>
+        <a href="logout.php" class="nav-link" onclick="return logoutConfirm()" title="Logout"><i class="fas fa-sign-out-alt"></i></a>
     </div>
 
-    <div class="summary-section">
-        <div class="menu-preview">
-            <h3>Pratinjau Tampilan User</h3>
+    <div class="form-content">
+        
+        <div class="form-card">
+            <div class="header-action">
+                <a href="menu.php" class="back-link"><i class="fas fa-arrow-left"></i> Daftar Menu</a>
+                <h2>Input Menu Baru</h2>
+            </div>
+
+            <form name="menuForm" method="POST" enctype="multipart/form-data" onsubmit="return validateForm()">
+                <div class="input-group">
+                    <div class="form-control">
+                        <label>Nama Menu</label>
+                        <input type="text" name="nama_menu" id="nama_menu_input" placeholder="Contoh: Nasi Goreng Spesial" required>
+                    </div>
+                    <div class="form-control">
+                        <label>Kategori</label>
+                        <input type="text" name="kategori" id="kategori_input" placeholder="Contoh: Rice Bowl / Dessert" required>
+                    </div>
+                </div>
+
+                <div class="input-group">
+                    <div class="form-control">
+                        <label>Harga (Rp)</label>
+                        <input type="number" name="harga" id="harga_input" placeholder="Contoh: 15000" required>
+                    </div>
+                    <div class="form-control">
+                        <label>Foto Menu</label>
+                        <input type="file" name="foto" id="foto_input" required>
+                    </div>
+                </div>
+
+                <div class="form-control">
+                    <label>Deskripsi Menu</label>
+                    <textarea name="deskripsi" id="deskripsi_input" placeholder="Jelaskan secara singkat menu ini..." required></textarea>
+                </div>
+                
+                <button type="submit" name="tambah" class="btn-submit">
+                    <i class="fas fa-plus"></i> Tambah & Simpan Menu
+                </button>
+            </form>
+        </div>
+
+        <div class="preview-card">
+            <h3>Pratinjau User</h3>
             <div id="image_preview" class="preview-img-placeholder">Foto Menu</div>
             
             <div class="menu-info">
@@ -303,7 +375,9 @@ if (isset($_POST['tambah'])) {
                 <span id="display_deskripsi">Deskripsi singkat menu akan muncul di sini...</span>
             </div>
         </div>
+
     </div>
 </div>
+
 </body>
 </html>

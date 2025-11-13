@@ -53,6 +53,19 @@ while ($data = mysqli_fetch_assoc($grafikPendapatanResult)) {
 
 $jsonBulan = json_encode($dataBulan);
 $jsonPendapatan = json_encode($dataPendapatan);
+
+if (isset($_GET['logout'])) {
+    session_destroy(); // Hapus semua sesi
+    header("Location: login.php"); // Lempar kembali ke login
+    exit;
+}
+// -----------------------------------------
+
+// Cek apakah admin sudah login (Kode lama kamu)
+if (!isset($_SESSION['id_admin'])) {
+    header("Location: login.php");
+    exit;
+}
 ?>
 
 <!DOCTYPE html>
@@ -248,7 +261,7 @@ $jsonPendapatan = json_encode($dataPendapatan);
         <a href="tambah.php" class="nav-link" title="Tambah Menu"><i class="fas fa-plus"></i></a>
         
         <a href="pesanan.php" class="nav-link" title="Kelola Pesanan"><i class="fas fa-receipt"></i></a>
-        <a href="logout.php" class="nav-link" onclick="return logoutConfirm()" title="Logout"><i class="fas fa-sign-out-alt"></i></a>
+        <a href="dashboard.admin.php?logout=true" class="nav-link" onclick="return logoutConfirm()" title="Logout"><i class="fas fa-sign-out-alt"></i></a>
     </div>
 
     <div class="main-content">

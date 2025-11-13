@@ -24,7 +24,7 @@ if (isset($_POST['edit'])) {
         $fotoQuery = ", foto='$foto'";
     }
 
-    // Query UPDATE menu (tanpa rating_rata, karena itu diurus user)
+    // Query UPDATE menu
     mysqli_query($conn, "UPDATE menu SET nama_menu='$nama', kategori='$kategori', harga='$harga', deskripsi='$deskripsi' $fotoQuery WHERE id_menu='$id'");
     echo "<script>alert('Menu berhasil diperbarui!'); window.location='menu.php';</script>";
 }
@@ -49,11 +49,11 @@ $menu = mysqli_query($conn, "SELECT * FROM menu ORDER BY id_menu DESC");
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <style>
         :root {
-            --primary-color: #FF5722;
-            --danger-color: #f44336;
+            --theme-primary: #FF5722;
             --success-color: #4CAF50;
-            --bg-light: #f7f7f7;
-            --text-dark: #333;
+            --danger-color: #f44336;
+            --bg-light: #f4f6f9;
+            --text-dark: #1f2937;
         }
 
         body {
@@ -61,177 +61,338 @@ $menu = mysqli_query($conn, "SELECT * FROM menu ORDER BY id_menu DESC");
             font-family: 'Poppins', sans-serif;
             background-color: var(--bg-light);
             color: var(--text-dark);
+        }
+
+        /* --- LAYOUT UTAMA (Sama seperti Dashboard) --- */
+        .dashboard-wrapper {
             padding: 20px;
-        }
-        
-        .container {
-            background: white;
-            padding: 30px;
-            border-radius: 12px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-            max-width: 95%;
-            margin: auto;
+            display: flex;
+            gap: 20px;
+            min-height: 100vh;
+            box-sizing: border-box;
         }
 
-        h1 {
-            color: var(--text-dark);
-            font-weight: 600;
-            margin-bottom: 5px;
+        /* --- SIDEBAR (Sama seperti Dashboard) --- */
+        .sidebar {
+            width: 70px;
+            background-color: white;
+            border-radius: 15px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+            padding: 20px 0;
+            flex-shrink: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            height: fit-content; /* Agar sidebar tidak memanjang paksa ke bawah jika konten sedikit */
+            min-height: 80vh;
         }
-
-        /* --- STYLING BUTTONS --- */
-        .btn {
-            padding: 8px 12px;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-            font-weight: 500;
-            margin-right: 5px;
+        .nav-link {
+            padding: 10px;
+            margin: 5px 0;
+            color: #9ca3af;
+            font-size: 20px;
+            transition: color 0.2s, background-color 0.2s;
+            border-radius: 8px;
             text-decoration: none;
+            display: block;
+            text-align: center;
+            width: 40px;
         }
-        .btn-add {
-            background-color: var(--primary-color);
-            color: white;
+        .nav-link:hover, .nav-link.active {
+            color: var(--theme-primary);
+            background-color: #fcebeb;
+        }
+
+        /* --- KONTEN UTAMA --- */
+        .main-content {
+            flex-grow: 1;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            padding: 30px;
+            overflow-x: auto;
+        }
+
+        /* --- HEADER AREA --- */
+        .header-action {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
             margin-bottom: 20px;
-            display: inline-block;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #eee;
         }
-        .btn-success {
-            background-color: var(--success-color);
-            color: white;
-            padding: 5px 8px;
-            font-size: 12px;
-        }
-        .btn-danger {
-            background-color: var(--danger-color);
-            color: white;
-            padding: 5px 8px;
-            font-size: 12px;
-            display: inline-block;
+        h1 {
+            font-size: 24px;
+            font-weight: 600;
+            margin: 0;
         }
         .back-link {
             text-decoration: none;
-            color: var(--text-dark);
-            font-weight: 500;
-            margin-bottom: 20px;
-            display: inline-block;
+            color: #999;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            margin-bottom: 5px;
+            transition: color 0.2s;
         }
+        .back-link:hover { color: var(--theme-primary); }
 
-        /* --- STYLING TABEL --- */
+        .btn-add {
+            background-color: var(--theme-primary);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 500;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: background 0.2s;
+            font-size: 14px;
+        }
+        .btn-add:hover { background-color: #e64a19; }
+
+        /* --- TABEL --- */
         table {
             width: 100%;
             border-collapse: collapse;
-            margin-top: 20px;
-            background: white;
-            border-radius: 10px;
-            overflow: hidden;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
-        }
-        th, td {
-            padding: 12px 15px;
-            text-align: left;
-            border-bottom: 1px solid #eee;
-            vertical-align: top;
-            font-size: 14px;
+            margin-top: 10px;
         }
         th {
-            background-color: var(--primary-color);
-            color: white;
-            font-weight: 600;
+            background-color: #f9fafb;
+            color: #6b7280;
+            font-size: 12px;
             text-transform: uppercase;
+            letter-spacing: 0.5px;
+            padding: 15px;
+            text-align: left;
+            border-bottom: 1px solid #eee;
+            font-weight: 600;
         }
-        tr:nth-child(even) {
-            background-color: #f9f9f9;
+        td {
+            padding: 15px;
+            vertical-align: middle;
+            border-bottom: 1px solid #eee;
+            font-size: 14px;
         }
-        .table-image {
-            display: block;
+        tr:hover { background-color: #fafafa; }
+
+        .img-thumb {
+            width: 50px;
+            height: 50px;
+            border-radius: 8px;
+            object-fit: cover;
+            border: 1px solid #eee;
+        }
+
+        .badge {
+            padding: 4px 8px;
             border-radius: 4px;
-            border: 1px solid #ddd;
+            font-size: 11px;
+            font-weight: 500;
+            display: inline-block;
+            margin-right: 5px;
         }
-        
-        /* --- STYLING INLINE EDIT FORM --- */
-        td form {
+        .badge-cat { background-color: #e3f2fd; color: #1565c0; }
+        .badge-star { background-color: #fff8e1; color: #f57f17; }
+
+        .price {
+            font-weight: 600;
+            color: var(--theme-primary);
+        }
+
+        /* --- ACTION BUTTONS --- */
+        .action-wrapper {
             display: flex;
-            flex-direction: column;
             gap: 5px;
         }
-        td form input[type="text"], 
-        td form input[type="number"],
-        td form textarea {
-            width: 150px;
-            padding: 5px;
-            margin: 0;
+        .btn-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s;
+            color: white;
             font-size: 12px;
-            border-radius: 4px;
-            border: 1px solid #ccc;
         }
-        td form textarea {
-            height: 50px;
-            resize: vertical;
+        .btn-edit { background-color: #FFB74D; } 
+        .btn-edit:hover { background-color: #ffa726; }
+        
+        .btn-delete { background-color: #ef9a9a; } 
+        .btn-delete:hover { background-color: #ef5350; }
+
+        /* --- EDIT MODE --- */
+        .edit-mode { display: none; background-color: #fdfdfd; }
+        .view-mode { display: table-row; }
+        
+        .form-inline {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+        .form-inline input, .form-inline textarea {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 13px;
+            box-sizing: border-box;
+            font-family: inherit;
+        }
+        .form-inline textarea { grid-column: 1 / span 2; height: 60px; resize: vertical; }
+        
+        .btn-save {
+            background-color: var(--success-color);
+            color: white;
+            padding: 6px 12px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            margin-right: 5px;
+        }
+        .btn-cancel {
+            background-color: #999;
+            color: white;
+            padding: 6px 12px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
         }
     </style>
     <script>
         function confirmDelete() {
             return confirm("Yakin mau hapus menu ini?");
         }
+
+        function toggleEdit(id) {
+            var viewRow = document.getElementById('view-' + id);
+            var editRow = document.getElementById('edit-' + id);
+            
+            if (viewRow.style.display === 'none') {
+                viewRow.style.display = 'table-row';
+                editRow.style.display = 'none';
+            } else {
+                viewRow.style.display = 'none';
+                editRow.style.display = 'table-row';
+            }
+        }
+
+        function logoutConfirm() {
+            return confirm("Yakin mau logout dari akun admin?");
+        }
     </script>
 </head>
 <body>
-<div class="container">
-    <h1>Kelola Menu Makanan</h1>
-    <a href="dashboard.admin.php" class="back-link"><i class="fas fa-chevron-left"></i> Kembali ke Dashboard</a>
-    <hr>
+
+<div class="dashboard-wrapper">
     
-    <a href="tambah_menu.php" class="btn btn-add"><i class="fas fa-plus"></i> Tambah Menu Baru</a>
+    <div class="sidebar">
+        <a href="dashboard.admin.php" class="nav-link" title="Dashboard"><i class="fas fa-chart-line"></i></a>
+        <a href="menu.php" class="nav-link active" title="Kelola Menu"><i class="fas fa-utensils"></i></a>
+        <a href="tambah.php" class="nav-link" title="Tambah Menu"><i class="fas fa-plus"></i></a>
+        <a href="pesanan.php" class="nav-link" title="Kelola Pesanan"><i class="fas fa-receipt"></i></a>
+        <a href="logout.php" class="nav-link" onclick="return logoutConfirm()" title="Logout"><i class="fas fa-sign-out-alt"></i></a>
+    </div>
 
-    <h2>Daftar Menu Saat Ini</h2>
+    <div class="main-content">
+        <div class="header-action">
+            <div>
+                <a href="dashboard.admin.php" class="back-link"><i class="fas fa-arrow-left"></i> Dashboard</a>
+                <h1>Daftar Menu Makanan</h1>
+            </div>
+            <a href="tambah.php" class="btn-add"><i class="fas fa-plus"></i> Tambah Menu Baru</a>
+        </div>
 
-    <table>
-        <tr>
-            <th>No</th>
-            <th>Foto</th>
-            <th>Nama Menu</th>
-            <th>Kategori</th>
-            <th>Harga</th>
-            <th>Rating</th>
-            <th>Deskripsi</th> 
-            <th>Aksi</th>
-        </tr>
+        <table>
+            <thead>
+                <tr>
+                    <th width="5%">No</th>
+                    <th width="10%">Foto</th>
+                    <th width="20%">Info Menu</th>
+                    <th width="35%">Deskripsi</th>
+                    <th width="15%">Harga</th>
+                    <th width="15%">Aksi</th>
+                </tr>
+            </thead>
+            <tbody>
+                <?php
+                $no = 1;
+                while ($row = mysqli_fetch_assoc($menu)):
+                ?>
+                
+                <tr id="view-<?= $row['id_menu']; ?>" class="view-mode">
+                    <td><?= $no++; ?></td>
+                    <td>
+                        <?php if (!empty($row['foto'])): ?>
+                            <img src="../assets/img/<?= $row['foto']; ?>" class="img-thumb">
+                        <?php else: ?>
+                            <div style="width:50px; height:50px; background:#eee; border-radius:8px;"></div>
+                        <?php endif; ?>
+                    </td>
+                    <td>
+                        <div style="font-weight: 600; margin-bottom: 3px;"><?= htmlspecialchars($row['nama_menu']); ?></div>
+                        <span class="badge badge-cat"><?= htmlspecialchars($row['kategori']); ?></span>
+                        <span class="badge badge-star">⭐ <?= number_format($row['rating_rata'], 1); ?></span>
+                    </td>
+                    <td>
+                        <div style="font-size: 13px; color: #666; line-height: 1.4;">
+                            <?= htmlspecialchars(substr($row['deskripsi'], 0, 80)) . (strlen($row['deskripsi']) > 80 ? '...' : ''); ?>
+                        </div>
+                    </td>
+                    <td class="price">Rp<?= number_format($row['harga'], 0, ',', '.'); ?></td>
+                    <td>
+                        <div class="action-wrapper">
+                            <button onclick="toggleEdit(<?= $row['id_menu']; ?>)" class="btn-icon btn-edit" title="Edit">
+                                <i class="fas fa-pen"></i>
+                            </button>
+                            <a href="menu.php?hapus=<?= $row['id_menu']; ?>" onclick="return confirmDelete()" class="btn-icon btn-delete" title="Hapus">
+                                <i class="fas fa-trash"></i>
+                            </a>
+                        </div>
+                    </td>
+                </tr>
 
-        <?php
-        $no = 1;
-        while ($row = mysqli_fetch_assoc($menu)):
-        ?>
-        <tr>
-            <td><?= $no++; ?></td>
-            <td>
-                <?php if (!empty($row['foto'])): ?>
-                    <img src="../assets/img/<?= $row['foto']; ?>" alt="<?= htmlspecialchars($row['nama_menu']); ?>" width="80" class="table-image">
-                <?php else: ?>
-                    (tidak ada foto)
-                <?php endif; ?>
-            </td>
-            <td><?= htmlspecialchars($row['nama_menu']); ?></td>
-            <td><?= htmlspecialchars($row['kategori']); ?></td>
-            <td>Rp<?= number_format($row['harga'], 0, ',', '.'); ?></td>
-            <td><?= number_format($row['rating_rata'], 1); ?> ⭐</td> 
-            <td><?= htmlspecialchars(substr($row['deskripsi'], 0, 50)); ?>...</td>
-            <td>
-                <form method="POST" enctype="multipart/form-data">
-                    <input type="hidden" name="id_menu" value="<?= $row['id_menu']; ?>">
-                    
-                    <input type="text" name="nama_menu" value="<?= htmlspecialchars($row['nama_menu']); ?>" required>
-                    <input type="text" name="kategori" value="<?= htmlspecialchars($row['kategori']); ?>" required>
-                    <input type="number" name="harga" value="<?= htmlspecialchars($row['harga']); ?>" required>
-                    <textarea name="deskripsi" required><?= htmlspecialchars($row['deskripsi']); ?></textarea>
-                    <input type="file" name="foto">
-                    
-                    <button type="submit" name="edit" class="btn btn-success"><i class="fas fa-save"></i> Simpan</button>
-                </form>
-                <a href="menu.php?hapus=<?= $row['id_menu']; ?>" onclick="return confirmDelete()" class="btn btn-danger" style="margin-top: 5px;"><i class="fas fa-trash"></i> Hapus</a>
-            </td>
-        </tr>
-        <?php endwhile; ?>
-    </table>
+                <tr id="edit-<?= $row['id_menu']; ?>" class="edit-mode">
+                    <td colspan="6">
+                        <form method="POST" enctype="multipart/form-data" style="padding: 15px; background: #fdfdfd; border-radius: 8px;">
+                            <input type="hidden" name="id_menu" value="<?= $row['id_menu']; ?>">
+                            
+                            <div style="display: flex; gap: 20px; align-items: start;">
+                                <div style="width: 120px; flex-shrink: 0;">
+                                    <small style="display:block; margin-bottom:5px; color: #666;">Ganti Foto</small>
+                                    <input type="file" name="foto" style="font-size: 11px; width: 100%;">
+                                </div>
+
+                                <div style="flex-grow: 1;">
+                                    <div class="form-inline">
+                                        <input type="text" name="nama_menu" value="<?= htmlspecialchars($row['nama_menu']); ?>" placeholder="Nama Menu" required>
+                                        <input type="text" name="kategori" value="<?= htmlspecialchars($row['kategori']); ?>" placeholder="Kategori" required>
+                                        <input type="number" name="harga" value="<?= htmlspecialchars($row['harga']); ?>" placeholder="Harga" required>
+                                        <textarea name="deskripsi" placeholder="Deskripsi Menu" required><?= htmlspecialchars($row['deskripsi']); ?></textarea>
+                                    </div>
+                                    <div style="margin-top: 10px; text-align: right;">
+                                        <button type="button" onclick="toggleEdit(<?= $row['id_menu']; ?>)" class="btn-cancel">Batal</button>
+                                        <button type="submit" name="edit" class="btn-save"><i class="fas fa-save"></i> Simpan</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </form>
+                    </td>
+                </tr>
+
+                <?php endwhile; ?>
+            </tbody>
+        </table>
+    </div>
 </div>
+
 </body>
 </html>

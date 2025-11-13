@@ -32,14 +32,14 @@ if (isset($_POST['update_status'])) {
                 $pesan = "Pesanan Anda (ID #$id_pesanan) telah selesai diantar. Terima kasih!";
             }
 
-            // INSERT NOTIFIKASI ke tabel notifikasi
+            // INSERT NOTIFIKASI
             if (!empty($pesan)) {
                 $query_notif = "INSERT INTO notifikasi (id_user, id_pesanan, pesan, status_baca) 
                                 VALUES ('$id_user_for_notif', '$id_pesanan', '$pesan', 'Belum')";
                 mysqli_query($conn, $query_notif);
             }
             
-            echo "<script>alert('Status pesanan ID $id_pesanan berhasil diubah menjadi $new_status! Notifikasi terkirim ke user.'); window.location='pesanan.php?status=$current_status';</script>";
+            echo "<script>alert('Status pesanan ID $id_pesanan berhasil diubah menjadi $new_status!'); window.location='pesanan.php?status=$current_status';</script>";
         } else {
             echo "<script>alert('Gagal mengubah status: " . mysqli_error($conn) . "');</script>";
         }
@@ -47,7 +47,7 @@ if (isset($_POST['update_status'])) {
 }
 
 // ===========================================
-// AMBIL DATA PESANAN DARI DATABASE (Dinamis berdasarkan status)
+// AMBIL DATA PESANAN
 // ===========================================
 $where_clause = ($current_status !== 'All') ? "WHERE p.status = '$current_status'" : "";
 
@@ -77,7 +77,7 @@ $query_pesanan = "
 
 $result_pesanan = mysqli_query($conn, $query_pesanan);
 
-// Ambil jumlah total pesanan per status untuk tab
+// Hitung jumlah untuk Tab
 $count_query = mysqli_query($conn, "SELECT status, COUNT(*) as count FROM pesanan GROUP BY status WITH ROLLUP");
 $status_counts = ['All' => 0, 'Menunggu' => 0, 'Dikonfirmasi' => 0, 'Ditolak' => 0, 'Selesai' => 0];
 while ($row = mysqli_fetch_assoc($count_query)) {
@@ -98,33 +98,42 @@ while ($row = mysqli_fetch_assoc($count_query)) {
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <style>
         :root {
-            --primary-color: #FF5722;
+            --theme-primary: #FF5722;
             --success-color: #4CAF50;
             --pending-color: #ffc107;
             --danger-color: #f44336;
-            --bg-light: #f7f7f7;
-            --text-dark: #333;
+            --bg-light: #f4f6f9;
+            --text-dark: #1f2937;
         }
 
         body {
+            margin: 0;
             font-family: 'Poppins', sans-serif;
             background-color: var(--bg-light);
-            padding: 0;
-            margin: 0;
-            display: flex; /* Menggunakan flexbox untuk layout utama */
+            color: var(--text-dark);
+        }
+
+        /* LAYOUT WRAPPER (Sama seperti Dashboard) */
+        .dashboard-wrapper {
+            padding: 20px;
+            display: flex;
+            gap: 20px;
             min-height: 100vh;
         }
-        
-        /* FIX: Styling Sidebar */
+
+        /* SIDEBAR (Sama seperti Dashboard) */
         .sidebar {
             width: 70px;
             background-color: white;
+            border-radius: 15px;
             box-shadow: 0 4px 10px rgba(0,0,0,0.05);
             padding: 20px 0;
             flex-shrink: 0;
             display: flex;
             flex-direction: column;
             align-items: center;
+            height: fit-content;
+            min-height: 80vh;
         }
         .nav-link {
             padding: 10px;
@@ -134,21 +143,20 @@ while ($row = mysqli_fetch_assoc($count_query)) {
             transition: color 0.2s, background-color 0.2s;
             border-radius: 8px;
             text-decoration: none;
-            display: block;
         }
         .nav-link:hover, .nav-link.active {
-            color: var(--primary-color);
+            color: var(--theme-primary);
             background-color: #fcebeb;
         }
-        /* END FIX: Styling Sidebar */
 
-        .container {
-            flex-grow: 1; /* Mengisi sisa ruang */
+        /* KONTEN UTAMA */
+        .main-content {
+            flex-grow: 1;
             background: white;
+            border-radius: 15px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
             padding: 30px;
-            border-radius: 0;
-            box-shadow: none;
-            box-sizing: border-box; 
+            overflow-x: auto;
         }
 
         /* HEADER & TABS */
@@ -158,108 +166,112 @@ while ($row = mysqli_fetch_assoc($count_query)) {
             align-items: center;
             margin-bottom: 20px;
         }
+        h2 {
+            margin: 0;
+            color: var(--text-dark);
+            font-size: 24px;
+        }
+        .back-link {
+            text-decoration: none;
+            color: var(--theme-primary);
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            margin-bottom: 10px;
+        }
+
         .tabs {
             display: flex;
             gap: 10px;
             border-bottom: 1px solid #eee;
-            padding-bottom: 5px;
+            padding-bottom: 10px;
             margin-bottom: 20px;
             overflow-x: auto;
         }
         .tab-button {
-            padding: 10px 15px;
+            padding: 8px 16px;
             background: none;
             border: none;
             cursor: pointer;
             font-weight: 500;
             color: #666;
             border-radius: 8px;
-            transition: color 0.2s, border-bottom 0.2s;
+            transition: all 0.2s;
             white-space: nowrap;
+            font-family: inherit;
+            font-size: 14px;
+        }
+        .tab-button:hover {
+            background-color: #f9f9f9;
         }
         .tab-button.active {
-            color: var(--primary-color);
-            border-bottom: 3px solid var(--primary-color);
+            color: var(--theme-primary);
+            background-color: #ffece6;
+            font-weight: 600;
         }
 
         /* STATUS BADGES */
         .status-badge {
-            padding: 5px 10px;
-            border-radius: 4px;
+            padding: 6px 12px;
+            border-radius: 6px;
             font-size: 12px;
             font-weight: 600;
+            display: inline-block;
         }
-        .status-Menunggu {
-            background-color: #fff3cd;
-            color: var(--pending-color);
-        }
-        .status-Dikonfirmasi {
-            background-color: #d4edda;
-            color: var(--success-color);
-        }
-        .status-Ditolak {
-            background-color: #f8d7da;
-            color: var(--danger-color);
-        }
-        .status-Selesai {
-            background-color: #cce5ff;
-            color: #004085;
-        }
+        .status-Menunggu { background-color: #fff3cd; color: #856404; }
+        .status-Dikonfirmasi { background-color: #d4edda; color: #155724; }
+        .status-Ditolak { background-color: #f8d7da; color: #721c24; }
+        .status-Selesai { background-color: #cce5ff; color: #004085; }
         
         /* TABLE STYLING */
         table {
             width: 100%;
             border-collapse: collapse;
+            margin-top: 10px;
         }
         th, td {
-            padding: 12px 15px;
+            padding: 15px;
             text-align: left;
             border-bottom: 1px solid #eee;
-            vertical-align: top;
+            vertical-align: middle;
             font-size: 14px;
         }
         th {
-            background-color: var(--bg-light);
-            color: var(--text-dark);
+            background-color: #f9fafb;
+            color: #6b7280;
             font-weight: 600;
-            font-size: 14px;
+            text-transform: uppercase;
+            font-size: 12px;
+            letter-spacing: 0.5px;
         }
-        td strong {
-            display: block;
-            font-size: 14px;
-        }
-        td small {
-            color: #999;
-            font-size: 11px;
-            white-space: normal;
-        }
+        tr:hover { background-color: #fafafa; }
+        td strong { display: block; color: var(--text-dark); margin-bottom: 3px; }
+        td small { color: #888; font-size: 12px; line-height: 1.4; display: block; }
 
         /* Aksi Buttons */
         .action-button {
-            padding: 6px 10px;
+            padding: 8px 12px;
             border: none;
-            border-radius: 4px;
+            border-radius: 6px;
             cursor: pointer;
             font-size: 12px;
             font-weight: 500;
             color: white;
-            display: block; 
+            display: flex; 
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
             width: 100%;
             box-sizing: border-box;
             margin-bottom: 5px;
-            text-align: center;
+            transition: opacity 0.2s;
         }
+        .action-button:hover { opacity: 0.9; }
         .btn-confirm { background-color: var(--success-color); }
         .btn-reject { background-color: var(--danger-color); }
         .btn-complete { background-color: #007bff; }
 
-        .back-link {
-            text-decoration: none;
-            color: var(--primary-color);
-            font-weight: 600;
-            margin-bottom: 15px; /* Jarak dari header */
-            display: block;
-        }
     </style>
     <script>
         function setStatus(id, newStatus, idUser, currentTab) {
@@ -308,17 +320,20 @@ while ($row = mysqli_fetch_assoc($count_query)) {
 </head>
 <body>
 
-<div class="full-page-layout">
+<div class="dashboard-wrapper">
+    
     <div class="sidebar">
         <a href="dashboard.admin.php" class="nav-link" title="Dashboard"><i class="fas fa-chart-line"></i></a>
         <a href="menu.php" class="nav-link" title="Kelola Menu"><i class="fas fa-utensils"></i></a>
-        <a href="tambah_menu.php" class="nav-link" title="Tambah Menu"><i class="fas fa-plus"></i></a>
+        <a href="tambah.php" class="nav-link" title="Tambah Menu"><i class="fas fa-plus"></i></a>
+        
         <a href="pesanan.php" class="nav-link active" title="Kelola Pesanan"><i class="fas fa-receipt"></i></a>
+        
         <a href="logout.php" class="nav-link" onclick="return logoutConfirm()" title="Logout"><i class="fas fa-sign-out-alt"></i></a>
     </div>
 
-    <div class="container">
-        <a href="dashboard.admin.php" class="back-link"><i class="fas fa-chevron-left"></i> Kembali ke Dashboard</a>
+    <div class="main-content">
+        <a href="dashboard.admin.php" class="back-link"><i class="fas fa-arrow-left"></i> Kembali ke Dashboard</a>
 
         <div class="header-section">
             <h2>Kelola Pesanan</h2>
@@ -330,7 +345,7 @@ while ($row = mysqli_fetch_assoc($count_query)) {
             foreach ($statuses as $status): 
             ?>
                 <button class="tab-button <?= $current_status === $status ? 'active' : ''; ?>" onclick="filterStatus('<?= $status; ?>')">
-                    <?= $status; ?> (<?= $status_counts[$status]; ?>)
+                    <?= $status; ?> <span style="font-size: 11px; background: #eee; padding: 2px 6px; border-radius: 10px; margin-left: 5px;"><?= $status_counts[$status]; ?></span>
                 </button>
             <?php endforeach; ?>
         </div>
@@ -339,12 +354,12 @@ while ($row = mysqli_fetch_assoc($count_query)) {
             <thead>
                 <tr>
                     <th style="width: 5%;">ID</th>
-                    <th style="width: 10%;">Waktu Pesan</th>
-                    <th style="width: 10%;">Pemesan</th>
-                    <th style="width: 20%;">Alamat Pengiriman</th>
+                    <th style="width: 12%;">Waktu</th>
+                    <th style="width: 15%;">Pemesan</th>
+                    <th style="width: 20%;">Alamat</th>
                     <th style="width: 15%;">Catatan</th>
-                    <th style="width: 15%;">Item & Total</th>
-                    <th style="width: 10%;">Status</th>
+                    <th style="width: 18%;">Detail Item</th>
+                    <th style="width: 5%;">Status</th>
                     <th style="width: 10%;">Aksi</th>
                 </tr>
             </thead>
@@ -359,17 +374,18 @@ while ($row = mysqli_fetch_assoc($count_query)) {
                         </td>
                         <td>
                             <strong><?= htmlspecialchars($row['nama_pemesan']); ?></strong>
-                            <small>User ID: <?= $row['id_user']; ?></small>
+                            <small>ID: <?= $row['id_user']; ?></small>
                         </td>
                         <td>
                             <small><?= htmlspecialchars($row['alamat']); ?></small>
                         </td>
                         <td>
-                            <small><?= empty($row['catatan']) ? '—' : htmlspecialchars($row['catatan']); ?></small>
+                            <small><?= empty($row['catatan']) ? '-' : htmlspecialchars($row['catatan']); ?></small>
                         </td>
                         <td>
                             <strong><?= htmlspecialchars($row['nama_menu'] ?? 'Menu Dihapus'); ?></strong>
-                            <small>Total: Rp<?= number_format($row['total'], 0, ',', '.'); ?> (<?= $row['metode']; ?>)</small>
+                            <small style="color: var(--theme-primary); font-weight: 600;">Rp<?= number_format($row['total'], 0, ',', '.'); ?></small>
+                            <small><?= $row['metode']; ?></small>
                         </td>
                         <td>
                             <span class="status-badge status-<?= $row['status']; ?>"><?= $row['status']; ?></span>
@@ -377,22 +393,24 @@ while ($row = mysqli_fetch_assoc($count_query)) {
                         <td>
                             <?php if ($row['status'] === 'Menunggu'): ?>
                                 <button class="action-button btn-confirm" onclick="setStatus(<?= $row['id_pesanan']; ?>, 'Dikonfirmasi', <?= $row['id_user']; ?>, '<?= $current_status; ?>')">
-                                    <i class="fas fa-check"></i> Konfirmasi
+                                    <i class="fas fa-check"></i> Terima
                                 </button>
                                 <button class="action-button btn-reject" onclick="setStatus(<?= $row['id_pesanan']; ?>, 'Ditolak', <?= $row['id_user']; ?>, '<?= $current_status; ?>')">
                                     <i class="fas fa-times"></i> Tolak
                                 </button>
                             <?php elseif ($row['status'] === 'Dikonfirmasi'): ?>
                                 <button class="action-button btn-complete" onclick="setStatus(<?= $row['id_pesanan']; ?>, 'Selesai', <?= $row['id_user']; ?>, '<?= $current_status; ?>')">
-                                    <i class="fas fa-truck"></i> Selesaikan
+                                    <i class="fas fa-check-double"></i> Selesai
                                 </button>
+                            <?php else: ?>
+                                <span style="font-size: 12px; color: #aaa;">Selesai</span>
                             <?php endif; ?>
                         </td>
                     </tr>
                     <?php endwhile; ?>
                 <?php else: ?>
                     <tr>
-                        <td colspan="8" style="text-align: center; color: #999;">Tidak ada pesanan dalam status ini.</td>
+                        <td colspan="8" style="text-align: center; color: #999; padding: 40px;">Tidak ada pesanan dalam status ini.</td>
                     </tr>
                 <?php endif; ?>
             </tbody>
