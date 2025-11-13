@@ -22,15 +22,33 @@ $filter = $_GET['kategori'] ?? '';
 // Query menu berdasarkan pencarian dan filter
 $query = "SELECT * FROM menu WHERE 1=1";
 if (!empty($cari)) {
-    $query .= " AND nama_menu LIKE '%" . mysqli_real_escape_string($conn, $cari) . "%'";
+    // FIX 1: Perbaikan logika pencarian (LIKE 'keyword%') agar lebih sesuai dengan inisial
+    // dan menghindari potensi error pada beberapa konfigurasi database/server.
+    $query .= " AND nama_menu LIKE '" . mysqli_real_escape_string($conn, $cari) . "%'";
 }
 if (!empty($filter)) {
     $query .= " AND kategori = '" . mysqli_real_escape_string($conn, $filter) . "'";
 }
 $menu = mysqli_query($conn, $query);
 
-// Menu terpopuler (Untuk kolom kanan)
-$popular = mysqli_query($conn, "SELECT * FROM menu ORDER BY rating_rata DESC LIMIT 5");
+
+// FIX 3: Menu terpopuler berdasarkan FREKUENSI PEMBELIAN (total item di pesanan)
+$popular_query = "
+    SELECT 
+        m.*, 
+        COUNT(p.id_menu) AS total_orders 
+    FROM 
+        menu m
+    JOIN 
+        pesanan p ON m.id_menu = p.id_menu
+    GROUP BY 
+        m.id_menu
+    ORDER BY 
+        total_orders DESC 
+    LIMIT 5
+";
+
+$popular = mysqli_query($conn, $popular_query);
 ?>
 
 <!DOCTYPE html>
@@ -57,7 +75,7 @@ $popular = mysqli_query($conn, "SELECT * FROM menu ORDER BY rating_rata DESC LIM
         /* LAYOUT UTAMA (3 KOLOM) */
         .dashboard-layout {
             display: grid;
-            grid-template-columns: var(--sidebar-width) 1fr 300px; /* Sidebar | Konten | Kanan */
+            grid-template-columns: var(--sidebar-width) 1fr 300px;
             min-height: 100vh;
             background-color: white;
             box-shadow: 0 0 10px rgba(0,0,0,0.05);
@@ -186,6 +204,9 @@ $popular = mysqli_query($conn, "SELECT * FROM menu ORDER BY rating_rata DESC LIM
             object-fit: cover;
             border-radius: 12px 12px 0 0;
         }
+        .menu-details {
+            padding: 0 10px;
+        }
         .menu-details h4 {
             margin: 10px 0 5px;
             font-weight: 600;
@@ -197,15 +218,42 @@ $popular = mysqli_query($conn, "SELECT * FROM menu ORDER BY rating_rata DESC LIM
             font-weight: 700;
             color: var(--primary-color);
         }
-        .add-btn {
-            background-color: var(--secondary-color);
-            color: white;
-            border: none;
-            padding: 8px 15px;
+        .menu-rating {
+            display: block;
+            font-size: 14px;
+            color: #FFC107;
+            margin-bottom: 10px;
+        }
+        
+        /* FIX 2: Styling untuk Tombol Aksi yang lebih simple */
+        .menu-actions {
+            display: flex;
+            justify-content: space-around;
+            gap: 5px;
+            margin-top: 15px;
+        }
+        .action-btn {
+            flex: 1;
+            padding: 8px 5px;
             border-radius: 6px;
             cursor: pointer;
-            margin-top: 10px;
             font-weight: 500;
+            font-size: 13px;
+            transition: all 0.2s;
+        }
+        .cart-btn {
+            background-color: white; /* Putih */
+            color: var(--primary-color); /* Teks Oranye */
+            border: 1px solid var(--primary-color);
+        }
+        .cart-btn:hover {
+             background-color: var(--primary-color);
+             color: white;
+        }
+        .order-btn {
+            background-color: var(--primary-color); /* Oranye Solid */
+            color: white;
+            border: 1px solid var(--primary-color);
         }
 
 
@@ -257,6 +305,16 @@ $popular = mysqli_query($conn, "SELECT * FROM menu ORDER BY rating_rata DESC LIM
             color: var(--primary-color);
             font-size: 12px;
         }
+        .right-sidebar .add-btn {
+            background-color: var(--primary-color); 
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 6px;
+            cursor: pointer;
+            margin-top: 20px;
+            font-weight: 500;
+        }
     </style>
 </head>
 <body>
@@ -281,7 +339,8 @@ $popular = mysqli_query($conn, "SELECT * FROM menu ORDER BY rating_rata DESC LIM
                 <i class="fas fa-search"></i>
                 <form method="GET" action="" style="display:inline;">
                     <input type="text" name="cari" placeholder="Search menu..." value="<?= htmlspecialchars($cari); ?>">
-                    </form>
+                    <button type="submit" style="display:none;"></button>
+                </form>
             </div>
             
             <div class="user-info">
@@ -318,12 +377,20 @@ $popular = mysqli_query($conn, "SELECT * FROM menu ORDER BY rating_rata DESC LIM
                         <img src="../assets/img/<?= htmlspecialchars($row['foto'] ?? 'default.jpg'); ?>" alt="<?= htmlspecialchars($row['nama_menu']); ?>" class="menu-img">
                         <div class="menu-details">
                             <h4><?= htmlspecialchars($row['nama_menu']); ?></h4>
-                            <p>Rp<?= number_format($row['harga'], 0, ',', '.'); ?></p>
+                            <p>Rp<?= number_format((float)$row['harga'], 0, ',', '.'); ?></p>
+                            <span class="menu-rating">⭐ <?= number_format($row['rating_rata'], 1); ?></span>
                             
-                            <form method="POST" action="tambah_keranjang.php">
-                                <input type="hidden" name="id_menu" value="<?= $row['id_menu']; ?>">
-                                <button type="submit" class="add-btn">Add to Cart</button>
-                            </form>
+                            <div class="menu-actions">
+                                <form method="POST" action="tambah_keranjang.php" style="display: inline-block; flex: 1;">
+                                    <input type="hidden" name="id_menu" value="<?= $row['id_menu']; ?>">
+                                    <button type="submit" class="action-btn cart-btn"><i class="fas fa-shopping-basket"></i> Cart</button>
+                                </form>
+                                
+                                <form method="GET" action="order.php" style="display: inline-block; flex: 1;">
+                                    <input type="hidden" name="id_menu" value="<?= $row['id_menu']; ?>">
+                                    <button type="submit" class="action-btn order-btn"><i class="fas fa-receipt"></i> Pesan</button>
+                                </form>
+                            </div>
                         </div>
                     </div>
                 <?php endwhile; ?>
@@ -336,7 +403,7 @@ $popular = mysqli_query($conn, "SELECT * FROM menu ORDER BY rating_rata DESC LIM
 
     <div class="right-sidebar">
         <div class="popular-section">
-            <h3>Menu Populer 🔥</h3>
+            <h3>Menu Paling Laris 🔥</h3>
             <?php if (mysqli_num_rows($popular) > 0): ?>
                 <ul class="popular-list">
                     <?php while ($pop = mysqli_fetch_assoc($popular)): ?>
@@ -344,14 +411,14 @@ $popular = mysqli_query($conn, "SELECT * FROM menu ORDER BY rating_rata DESC LIM
                             <img src="../assets/img/<?= htmlspecialchars($pop['foto'] ?? 'default.jpg'); ?>" alt="<?= htmlspecialchars($pop['nama_menu']); ?>" class="pop-img">
                             <div class="pop-details">
                                 <strong><?= htmlspecialchars($pop['nama_menu']); ?></strong>
-                                <span class="pop-rating">⭐ <?= number_format($pop['rating_rata'], 1); ?></span>
-                                <div>Rp<?= number_format($pop['harga'], 0, ',', '.'); ?></div>
+                                <span class="pop-rating">Total Terjual: <?= $pop['total_orders']; ?></span>
+                                <div>Rp<?= number_format((float)$pop['harga'], 0, ',', '.'); ?></div>
                             </div>
                         </li>
                     <?php endwhile; ?>
                 </ul>
             <?php else: ?>
-                <p>Belum ada data menu populer.</p>
+                <p>Belum ada data menu populer (terjual).</p>
             <?php endif; ?>
             
             <button class="add-btn" style="width: 100%; margin-top: 20px;">Lihat Semua Menu</button>
