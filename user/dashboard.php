@@ -12,6 +12,13 @@ if (!isset($_SESSION['id_user'])) {
 $user_id = $_SESSION['id_user'];
 $user_data = mysqli_fetch_assoc(mysqli_query($conn, "SELECT nama FROM users WHERE id_user='$user_id'"));
 
+// ==========================================================
+// FIX: LOGIKA MENGHITUNG NOTIFIKASI BELUM DIBACA
+// ==========================================================
+$unread_notif_query = "SELECT COUNT(*) AS total FROM notifikasi WHERE id_user='$user_id' AND status_baca='Belum'";
+$unread_notif_count = mysqli_fetch_assoc(mysqli_query($conn, $unread_notif_query))['total'] ?? 0;
+// ==========================================================
+
 // Ambil kategori untuk filter dropdown
 $kategori_result = mysqli_query($conn, "SELECT DISTINCT kategori FROM menu");
 
@@ -22,8 +29,6 @@ $filter = $_GET['kategori'] ?? '';
 // Query menu berdasarkan pencarian dan filter
 $query = "SELECT * FROM menu WHERE 1=1";
 if (!empty($cari)) {
-    // FIX 1: Perbaikan logika pencarian (LIKE 'keyword%') agar lebih sesuai dengan inisial
-    // dan menghindari potensi error pada beberapa konfigurasi database/server.
     $query .= " AND nama_menu LIKE '" . mysqli_real_escape_string($conn, $cari) . "%'";
 }
 if (!empty($filter)) {
@@ -32,7 +37,7 @@ if (!empty($filter)) {
 $menu = mysqli_query($conn, $query);
 
 
-// FIX 3: Menu terpopuler berdasarkan FREKUENSI PEMBELIAN (total item di pesanan)
+// Menu terpopuler berdasarkan FREKUENSI PEMBELIAN
 $popular_query = "
     SELECT 
         m.*, 
@@ -104,12 +109,30 @@ $popular = mysqli_query($conn, $popular_query);
             font-size: 20px;
             transition: color 0.2s, background-color 0.2s;
             width: 100%;
+            position: relative; /* Penting untuk badge */
         }
         .nav-link:hover, .nav-link.active {
             color: var(--primary-color);
             background-color: #ffece6;
             border-left: 3px solid var(--primary-color);
         }
+        
+        /* FIX: STYLING UNTUK BADGE NOTIFIKASI */
+        .notification-badge {
+            position: absolute;
+            top: 8px; /* Posisikan di kanan atas ikon */
+            right: 15px;
+            background-color: red;
+            color: white;
+            font-size: 10px;
+            font-weight: 700;
+            padding: 2px 5px;
+            border-radius: 50%;
+            line-height: 1;
+            min-width: 15px; /* Lebar minimal untuk angka 1 */
+            text-align: center;
+        }
+        /* END FIX: STYLING BADGE */
 
         /* 2. KONTEN TENGAH (SEARCH & MENU) */
         .main-content {
@@ -225,7 +248,6 @@ $popular = mysqli_query($conn, $popular_query);
             margin-bottom: 10px;
         }
         
-        /* FIX 2: Styling untuk Tombol Aksi yang lebih simple */
         .menu-actions {
             display: flex;
             justify-content: space-around;
@@ -242,8 +264,8 @@ $popular = mysqli_query($conn, $popular_query);
             transition: all 0.2s;
         }
         .cart-btn {
-            background-color: white; /* Putih */
-            color: var(--primary-color); /* Teks Oranye */
+            background-color: white;
+            color: var(--primary-color);
             border: 1px solid var(--primary-color);
         }
         .cart-btn:hover {
@@ -251,7 +273,7 @@ $popular = mysqli_query($conn, $popular_query);
              color: white;
         }
         .order-btn {
-            background-color: var(--primary-color); /* Oranye Solid */
+            background-color: var(--primary-color);
             color: white;
             border: 1px solid var(--primary-color);
         }
@@ -328,7 +350,14 @@ $popular = mysqli_query($conn, $popular_query);
         <a href="keranjang.php" class="nav-link" title="Keranjang"><i class="fas fa-shopping-basket"></i></a>
         <a href="order.php" class="nav-link" title="Order"><i class="fas fa-receipt"></i></a>
         <a href="akun_user.php" class="nav-link" title="Akun"><i class="fas fa-user-circle"></i></a>
-        <a href="notifikasi.php" class="nav-link" title="Notifikasi"><i class="fas fa-bell"></i></a>
+        
+        <a href="notifikasi.php" class="nav-link" title="Notifikasi">
+            <i class="fas fa-bell"></i>
+            <?php if ($unread_notif_count > 0): ?>
+                <span class="notification-badge"><?= $unread_notif_count; ?></span>
+            <?php endif; ?>
+        </a>
+        
         <a href="logout.php" class="nav-link" onclick="return logoutConfirm()" title="Logout"><i class="fas fa-sign-out-alt"></i></a>
     </div>
 

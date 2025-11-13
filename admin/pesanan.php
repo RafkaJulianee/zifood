@@ -32,14 +32,13 @@ if (isset($_POST['update_status'])) {
                 $pesan = "Pesanan Anda (ID #$id_pesanan) telah selesai diantar. Terima kasih!";
             }
 
-            // INSERT NOTIFIKASI ke tabel notifikasi (akan muncul di dashboard user)
+            // INSERT NOTIFIKASI ke tabel notifikasi
             if (!empty($pesan)) {
                 $query_notif = "INSERT INTO notifikasi (id_user, id_pesanan, pesan, status_baca) 
                                 VALUES ('$id_user_for_notif', '$id_pesanan', '$pesan', 'Belum')";
                 mysqli_query($conn, $query_notif);
             }
             
-            // Redirect kembali ke tab status saat ini
             echo "<script>alert('Status pesanan ID $id_pesanan berhasil diubah menjadi $new_status! Notifikasi terkirim ke user.'); window.location='pesanan.php?status=$current_status';</script>";
         } else {
             echo "<script>alert('Gagal mengubah status: " . mysqli_error($conn) . "');</script>";
@@ -64,7 +63,7 @@ $query_pesanan = "
         TIME(p.tanggal) AS order_time, 
         p.metode,
         p.alamat,
-        p.catatan /* BARU: MENGAMBIL KOLOM CATATAN */
+        p.catatan
     FROM 
         pesanan p
     JOIN 
@@ -110,20 +109,46 @@ while ($row = mysqli_fetch_assoc($count_query)) {
         body {
             font-family: 'Poppins', sans-serif;
             background-color: var(--bg-light);
-            /* FIX 1: Menghilangkan padding agar container bisa full width */
             padding: 0;
             margin: 0;
+            display: flex; /* Menggunakan flexbox untuk layout utama */
+            min-height: 100vh;
         }
         
+        /* FIX: Styling Sidebar */
+        .sidebar {
+            width: 70px;
+            background-color: white;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+            padding: 20px 0;
+            flex-shrink: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .nav-link {
+            padding: 10px;
+            margin: 5px 0;
+            color: #9ca3af;
+            font-size: 20px;
+            transition: color 0.2s, background-color 0.2s;
+            border-radius: 8px;
+            text-decoration: none;
+            display: block;
+        }
+        .nav-link:hover, .nav-link.active {
+            color: var(--primary-color);
+            background-color: #fcebeb;
+        }
+        /* END FIX: Styling Sidebar */
+
         .container {
+            flex-grow: 1; /* Mengisi sisa ruang */
             background: white;
-            /* FIX 1: Menggunakan full width dan height */
-            width: 100%; 
-            min-height: 100vh;
             padding: 30px;
             border-radius: 0;
             box-shadow: none;
-            box-sizing: border-box; /* Penting untuk padding */
+            box-sizing: border-box; 
         }
 
         /* HEADER & TABS */
@@ -150,7 +175,7 @@ while ($row = mysqli_fetch_assoc($count_query)) {
             color: #666;
             border-radius: 8px;
             transition: color 0.2s, border-bottom 0.2s;
-            white-space: nowrap; /* Agar tab tidak terlipat */
+            white-space: nowrap;
         }
         .tab-button.active {
             color: var(--primary-color);
@@ -178,7 +203,7 @@ while ($row = mysqli_fetch_assoc($count_query)) {
         }
         .status-Selesai {
             background-color: #cce5ff;
-            color: #004085; /* Biru tua */
+            color: #004085;
         }
         
         /* TABLE STYLING */
@@ -206,7 +231,7 @@ while ($row = mysqli_fetch_assoc($count_query)) {
         td small {
             color: #999;
             font-size: 11px;
-            white-space: normal; /* Memungkinkan teks panjang untuk wrap */
+            white-space: normal;
         }
 
         /* Aksi Buttons */
@@ -217,50 +242,50 @@ while ($row = mysqli_fetch_assoc($count_query)) {
             cursor: pointer;
             font-size: 12px;
             font-weight: 500;
-            margin-right: 5px;
             color: white;
+            display: block; 
+            width: 100%;
+            box-sizing: border-box;
+            margin-bottom: 5px;
+            text-align: center;
         }
         .btn-confirm { background-color: var(--success-color); }
         .btn-reject { background-color: var(--danger-color); }
         .btn-complete { background-color: #007bff; }
-        .btn-struk { background-color: #333; color: white; }
 
         .back-link {
             text-decoration: none;
             color: var(--primary-color);
             font-weight: 600;
+            margin-bottom: 15px; /* Jarak dari header */
+            display: block;
         }
     </style>
     <script>
         function setStatus(id, newStatus, idUser, currentTab) {
             if (confirm(`Yakin ingin mengubah status pesanan #${id} menjadi ${newStatus}?`)) {
-                // Buat form dinamis untuk POST
                 const form = document.createElement('form');
                 form.method = 'POST';
                 form.action = `pesanan.php?status=${currentTab}`;
 
-                // Hidden field status
                 let inputStatus = document.createElement('input');
                 inputStatus.type = 'hidden';
                 inputStatus.name = 'status';
                 inputStatus.value = newStatus;
                 form.appendChild(inputStatus);
 
-                // Hidden field ID Pesanan
                 let inputId = document.createElement('input');
                 inputId.type = 'hidden';
                 inputId.name = 'id_pesanan';
                 inputId.value = id;
                 form.appendChild(inputId);
 
-                // Hidden field ID User (untuk Notifikasi)
                 let inputUser = document.createElement('input');
                 inputUser.type = 'hidden';
                 inputUser.name = 'id_user_for_notif';
                 inputUser.value = idUser;
                 form.appendChild(inputUser);
 
-                // Hidden field untuk trigger update
                 let inputUpdate = document.createElement('input');
                 inputUpdate.type = 'hidden';
                 inputUpdate.name = 'update_status';
@@ -275,97 +300,104 @@ while ($row = mysqli_fetch_assoc($count_query)) {
         function filterStatus(status) {
             window.location.href = `pesanan.php?status=${status}`;
         }
+
+        function logoutConfirm() {
+            return confirm("Yakin mau logout dari akun admin?");
+        }
     </script>
 </head>
 <body>
 
-<div class="container">
-    <a href="dashboard.admin.php" class="back-link"><i class="fas fa-chevron-left"></i> Kembali ke Dashboard</a>
+<div class="full-page-layout">
+    <div class="sidebar">
+        <a href="dashboard.admin.php" class="nav-link" title="Dashboard"><i class="fas fa-chart-line"></i></a>
+        <a href="menu.php" class="nav-link" title="Kelola Menu"><i class="fas fa-utensils"></i></a>
+        <a href="tambah_menu.php" class="nav-link" title="Tambah Menu"><i class="fas fa-plus"></i></a>
+        <a href="pesanan.php" class="nav-link active" title="Kelola Pesanan"><i class="fas fa-receipt"></i></a>
+        <a href="logout.php" class="nav-link" onclick="return logoutConfirm()" title="Logout"><i class="fas fa-sign-out-alt"></i></a>
+    </div>
 
-    <div class="header-section">
-        <h2>Kelola Pesanan</h2>
+    <div class="container">
+        <a href="dashboard.admin.php" class="back-link"><i class="fas fa-chevron-left"></i> Kembali ke Dashboard</a>
+
+        <div class="header-section">
+            <h2>Kelola Pesanan</h2>
         </div>
 
-    <div class="tabs">
-        <?php 
-        $statuses = ['All', 'Menunggu', 'Dikonfirmasi', 'Ditolak', 'Selesai'];
-        foreach ($statuses as $status): 
-        ?>
-            <button class="tab-button <?= $current_status === $status ? 'active' : ''; ?>" onclick="filterStatus('<?= $status; ?>')">
-                <?= $status; ?> (<?= $status_counts[$status]; ?>)
-            </button>
-        <?php endforeach; ?>
+        <div class="tabs">
+            <?php 
+            $statuses = ['All', 'Menunggu', 'Dikonfirmasi', 'Ditolak', 'Selesai'];
+            foreach ($statuses as $status): 
+            ?>
+                <button class="tab-button <?= $current_status === $status ? 'active' : ''; ?>" onclick="filterStatus('<?= $status; ?>')">
+                    <?= $status; ?> (<?= $status_counts[$status]; ?>)
+                </button>
+            <?php endforeach; ?>
+        </div>
+        
+        <table>
+            <thead>
+                <tr>
+                    <th style="width: 5%;">ID</th>
+                    <th style="width: 10%;">Waktu Pesan</th>
+                    <th style="width: 10%;">Pemesan</th>
+                    <th style="width: 20%;">Alamat Pengiriman</th>
+                    <th style="width: 15%;">Catatan</th>
+                    <th style="width: 15%;">Item & Total</th>
+                    <th style="width: 10%;">Status</th>
+                    <th style="width: 10%;">Aksi</th>
+                </tr>
+            </thead>
+            <tbody>
+                <?php if (mysqli_num_rows($result_pesanan) > 0): ?>
+                    <?php while ($row = mysqli_fetch_assoc($result_pesanan)): ?>
+                    <tr>
+                        <td>#<?= $row['id_pesanan']; ?></td>
+                        <td>
+                            <strong><?= htmlspecialchars($row['order_date']); ?></strong>
+                            <small><?= htmlspecialchars($row['order_time']); ?></small>
+                        </td>
+                        <td>
+                            <strong><?= htmlspecialchars($row['nama_pemesan']); ?></strong>
+                            <small>User ID: <?= $row['id_user']; ?></small>
+                        </td>
+                        <td>
+                            <small><?= htmlspecialchars($row['alamat']); ?></small>
+                        </td>
+                        <td>
+                            <small><?= empty($row['catatan']) ? '—' : htmlspecialchars($row['catatan']); ?></small>
+                        </td>
+                        <td>
+                            <strong><?= htmlspecialchars($row['nama_menu'] ?? 'Menu Dihapus'); ?></strong>
+                            <small>Total: Rp<?= number_format($row['total'], 0, ',', '.'); ?> (<?= $row['metode']; ?>)</small>
+                        </td>
+                        <td>
+                            <span class="status-badge status-<?= $row['status']; ?>"><?= $row['status']; ?></span>
+                        </td>
+                        <td>
+                            <?php if ($row['status'] === 'Menunggu'): ?>
+                                <button class="action-button btn-confirm" onclick="setStatus(<?= $row['id_pesanan']; ?>, 'Dikonfirmasi', <?= $row['id_user']; ?>, '<?= $current_status; ?>')">
+                                    <i class="fas fa-check"></i> Konfirmasi
+                                </button>
+                                <button class="action-button btn-reject" onclick="setStatus(<?= $row['id_pesanan']; ?>, 'Ditolak', <?= $row['id_user']; ?>, '<?= $current_status; ?>')">
+                                    <i class="fas fa-times"></i> Tolak
+                                </button>
+                            <?php elseif ($row['status'] === 'Dikonfirmasi'): ?>
+                                <button class="action-button btn-complete" onclick="setStatus(<?= $row['id_pesanan']; ?>, 'Selesai', <?= $row['id_user']; ?>, '<?= $current_status; ?>')">
+                                    <i class="fas fa-truck"></i> Selesaikan
+                                </button>
+                            <?php endif; ?>
+                        </td>
+                    </tr>
+                    <?php endwhile; ?>
+                <?php else: ?>
+                    <tr>
+                        <td colspan="8" style="text-align: center; color: #999;">Tidak ada pesanan dalam status ini.</td>
+                    </tr>
+                <?php endif; ?>
+            </tbody>
+        </table>
     </div>
-    
-    <table>
-        <thead>
-            <tr>
-                <th style="width: 5%;">ID</th>
-                <th style="width: 10%;">Waktu Pesan</th>
-                <th style="width: 15%;">Pemesan</th>
-                <th style="width: 20%;">Alamat Pengiriman</th>
-                <th style="width: 15%;">Catatan</th>
-                <th style="width: 15%;">Item & Total</th>
-                <th style="width: 10%;">Status</th>
-                <th style="width: 10%;">Aksi</th>
-            </tr>
-        </thead>
-        <tbody>
-            <?php if (mysqli_num_rows($result_pesanan) > 0): ?>
-                <?php while ($row = mysqli_fetch_assoc($result_pesanan)): ?>
-                <tr>
-                    <td>#<?= $row['id_pesanan']; ?></td>
-                    <td>
-                        <strong><?= htmlspecialchars($row['order_date']); ?></strong>
-                        <small><?= htmlspecialchars($row['order_time']); ?></small>
-                    </td>
-                    <td>
-                        <strong><?= htmlspecialchars($row['nama_pemesan']); ?></strong>
-                        <small>User ID: <?= $row['id_user']; ?></small>
-                    </td>
-                    <td>
-                        <small><?= htmlspecialchars($row['alamat']); ?></small>
-                    </td>
-                    <td>
-                        <small><?= empty($row['catatan']) ? '—' : htmlspecialchars($row['catatan']); ?></small>
-                    </td>
-                    <td>
-                        <strong><?= htmlspecialchars($row['nama_menu'] ?? 'Menu Dihapus'); ?></strong>
-                        <small>Total: Rp<?= number_format($row['total'], 0, ',', '.'); ?> (<?= $row['metode']; ?>)</small>
-                    </td>
-                    <td>
-                        <span class="status-badge status-<?= $row['status']; ?>"><?= $row['status']; ?></span>
-                    </td>
-                    <td>
-                        <?php if ($row['status'] === 'Menunggu'): ?>
-                            <button class="action-button btn-confirm" onclick="setStatus(<?= $row['id_pesanan']; ?>, 'Dikonfirmasi', <?= $row['id_user']; ?>, '<?= $current_status; ?>')">
-                                <i class="fas fa-check"></i> Konfirmasi
-                            </button>
-                            <button class="action-button btn-reject" onclick="setStatus(<?= $row['id_pesanan']; ?>, 'Ditolak', <?= $row['id_user']; ?>, '<?= $current_status; ?>')">
-                                <i class="fas fa-times"></i> Tolak
-                            </button>
-                        <?php elseif ($row['status'] === 'Dikonfirmasi'): ?>
-                            <button class="action-button btn-complete" onclick="setStatus(<?= $row['id_pesanan']; ?>, 'Selesai', <?= $row['id_user']; ?>, '<?= $current_status; ?>')">
-                                <i class="fas fa-truck"></i> Selesaikan
-                            </button>
-                        <?php else: ?>
-                            —
-                        <?php endif; ?>
-                        
-                        <a href="cetak_struk.php?id_pesanan=<?= $row['id_pesanan']; ?>" target="_blank" 
-                           class="action-button btn-struk" style="margin-top: 5px; display: inline-block;">
-                           <i class="fas fa-print"></i> Struk
-                        </a>
-                    </td>
-                </tr>
-                <?php endwhile; ?>
-            <?php else: ?>
-                <tr>
-                    <td colspan="8" style="text-align: center; color: #999;">Tidak ada pesanan dalam status ini.</td>
-                </tr>
-            <?php endif; ?>
-        </tbody>
-    </table>
 </div>
 
 </body>
