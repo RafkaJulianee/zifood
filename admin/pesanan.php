@@ -32,7 +32,7 @@ if (isset($_POST['update_status'])) {
                 $pesan = "Pesanan Anda (ID #$id_pesanan) telah selesai diantar. Terima kasih!";
             }
 
-            // INSERT NOTIFIKASI ke tabel notifikasi
+            // INSERT NOTIFIKASI ke tabel notifikasi (akan muncul di dashboard user)
             if (!empty($pesan)) {
                 $query_notif = "INSERT INTO notifikasi (id_user, id_pesanan, pesan, status_baca) 
                                 VALUES ('$id_user_for_notif', '$id_pesanan', '$pesan', 'Belum')";
@@ -40,7 +40,7 @@ if (isset($_POST['update_status'])) {
             }
             
             // Redirect kembali ke tab status saat ini
-            echo "<script>alert('Status pesanan ID $id_pesanan berhasil diubah menjadi $new_status!'); window.location='pesanan.php?status=$current_status';</script>";
+            echo "<script>alert('Status pesanan ID $id_pesanan berhasil diubah menjadi $new_status! Notifikasi terkirim ke user.'); window.location='pesanan.php?status=$current_status';</script>";
         } else {
             echo "<script>alert('Gagal mengubah status: " . mysqli_error($conn) . "');</script>";
         }
@@ -55,15 +55,16 @@ $where_clause = ($current_status !== 'All') ? "WHERE p.status = '$current_status
 $query_pesanan = "
     SELECT 
         p.id_pesanan, 
-        p.id_user, /* Diambil untuk notifikasi */
+        p.id_user, 
         u.nama AS nama_pemesan,
         m.nama_menu,
         p.total,
         p.status,
-        DATE(p.tanggal) AS order_date, /* Ambil hanya tanggal */
-        TIME(p.tanggal) AS order_time, /* Ambil waktu */
+        DATE(p.tanggal) AS order_date, 
+        TIME(p.tanggal) AS order_time, 
         p.metode,
-        p.alamat
+        p.alamat,
+        p.catatan /* BARU: MENGAMBIL KOLOM CATATAN */
     FROM 
         pesanan p
     JOIN 
@@ -100,7 +101,7 @@ while ($row = mysqli_fetch_assoc($count_query)) {
         :root {
             --primary-color: #FF5722;
             --success-color: #4CAF50;
-            --pending-color: #ffc107; /* Kuning */
+            --pending-color: #ffc107;
             --danger-color: #f44336;
             --bg-light: #f7f7f7;
             --text-dark: #333;
@@ -109,17 +110,20 @@ while ($row = mysqli_fetch_assoc($count_query)) {
         body {
             font-family: 'Poppins', sans-serif;
             background-color: var(--bg-light);
-            padding: 30px;
+            /* FIX 1: Menghilangkan padding agar container bisa full width */
+            padding: 0;
             margin: 0;
         }
         
         .container {
             background: white;
+            /* FIX 1: Menggunakan full width dan height */
+            width: 100%; 
+            min-height: 100vh;
             padding: 30px;
-            border-radius: 12px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-            max-width: 95%;
-            margin: auto;
+            border-radius: 0;
+            box-shadow: none;
+            box-sizing: border-box; /* Penting untuk padding */
         }
 
         /* HEADER & TABS */
@@ -135,6 +139,7 @@ while ($row = mysqli_fetch_assoc($count_query)) {
             border-bottom: 1px solid #eee;
             padding-bottom: 5px;
             margin-bottom: 20px;
+            overflow-x: auto;
         }
         .tab-button {
             padding: 10px 15px;
@@ -145,6 +150,7 @@ while ($row = mysqli_fetch_assoc($count_query)) {
             color: #666;
             border-radius: 8px;
             transition: color 0.2s, border-bottom 0.2s;
+            white-space: nowrap; /* Agar tab tidak terlipat */
         }
         .tab-button.active {
             color: var(--primary-color);
@@ -184,6 +190,8 @@ while ($row = mysqli_fetch_assoc($count_query)) {
             padding: 12px 15px;
             text-align: left;
             border-bottom: 1px solid #eee;
+            vertical-align: top;
+            font-size: 14px;
         }
         th {
             background-color: var(--bg-light);
@@ -198,6 +206,7 @@ while ($row = mysqli_fetch_assoc($count_query)) {
         td small {
             color: #999;
             font-size: 11px;
+            white-space: normal; /* Memungkinkan teks panjang untuk wrap */
         }
 
         /* Aksi Buttons */
@@ -214,6 +223,7 @@ while ($row = mysqli_fetch_assoc($count_query)) {
         .btn-confirm { background-color: var(--success-color); }
         .btn-reject { background-color: var(--danger-color); }
         .btn-complete { background-color: #007bff; }
+        .btn-struk { background-color: #333; color: white; }
 
         .back-link {
             text-decoration: none;
@@ -274,8 +284,7 @@ while ($row = mysqli_fetch_assoc($count_query)) {
 
     <div class="header-section">
         <h2>Kelola Pesanan</h2>
-        <a href="tambah_pesanan.php" class="btn" style="background-color: var(--primary-color); color: white;"><i class="fas fa-plus"></i> Pesanan Manual</a>
-    </div>
+        </div>
 
     <div class="tabs">
         <?php 
@@ -291,12 +300,14 @@ while ($row = mysqli_fetch_assoc($count_query)) {
     <table>
         <thead>
             <tr>
-                <th>ID</th>
-                <th>Waktu Pesan</th>
-                <th>Pemesan & Alamat</th>
-                <th>Item & Total</th>
-                <th>Status</th>
-                <th>Aksi</th>
+                <th style="width: 5%;">ID</th>
+                <th style="width: 10%;">Waktu Pesan</th>
+                <th style="width: 15%;">Pemesan</th>
+                <th style="width: 20%;">Alamat Pengiriman</th>
+                <th style="width: 15%;">Catatan</th>
+                <th style="width: 15%;">Item & Total</th>
+                <th style="width: 10%;">Status</th>
+                <th style="width: 10%;">Aksi</th>
             </tr>
         </thead>
         <tbody>
@@ -310,7 +321,13 @@ while ($row = mysqli_fetch_assoc($count_query)) {
                     </td>
                     <td>
                         <strong><?= htmlspecialchars($row['nama_pemesan']); ?></strong>
-                        <small><?= htmlspecialchars(substr($row['alamat'], 0, 30)); ?>...</small>
+                        <small>User ID: <?= $row['id_user']; ?></small>
+                    </td>
+                    <td>
+                        <small><?= htmlspecialchars($row['alamat']); ?></small>
+                    </td>
+                    <td>
+                        <small><?= empty($row['catatan']) ? '—' : htmlspecialchars($row['catatan']); ?></small>
                     </td>
                     <td>
                         <strong><?= htmlspecialchars($row['nama_menu'] ?? 'Menu Dihapus'); ?></strong>
@@ -334,12 +351,17 @@ while ($row = mysqli_fetch_assoc($count_query)) {
                         <?php else: ?>
                             —
                         <?php endif; ?>
+                        
+                        <a href="cetak_struk.php?id_pesanan=<?= $row['id_pesanan']; ?>" target="_blank" 
+                           class="action-button btn-struk" style="margin-top: 5px; display: inline-block;">
+                           <i class="fas fa-print"></i> Struk
+                        </a>
                     </td>
                 </tr>
                 <?php endwhile; ?>
             <?php else: ?>
                 <tr>
-                    <td colspan="6" style="text-align: center; color: #999;">Tidak ada pesanan dalam status ini.</td>
+                    <td colspan="8" style="text-align: center; color: #999;">Tidak ada pesanan dalam status ini.</td>
                 </tr>
             <?php endif; ?>
         </tbody>
