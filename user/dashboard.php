@@ -8,6 +8,10 @@ if (!isset($_SESSION['id_user'])) {
     exit;
 }
 
+// Ambil data user yang sedang login
+$user_id = $_SESSION['id_user'];
+$user_data = mysqli_fetch_assoc(mysqli_query($conn, "SELECT nama FROM users WHERE id_user='$user_id'"));
+
 // Ambil kategori untuk filter dropdown
 $kategori_result = mysqli_query($conn, "SELECT DISTINCT kategori FROM menu");
 
@@ -25,8 +29,8 @@ if (!empty($filter)) {
 }
 $menu = mysqli_query($conn, $query);
 
-// Menu terpopuler
-$popular = mysqli_query($conn, "SELECT * FROM menu ORDER BY rating_rata DESC LIMIT 3");
+// Menu terpopuler (Untuk kolom kanan)
+$popular = mysqli_query($conn, "SELECT * FROM menu ORDER BY rating_rata DESC LIMIT 5");
 ?>
 
 <!DOCTYPE html>
@@ -34,80 +38,332 @@ $popular = mysqli_query($conn, "SELECT * FROM menu ORDER BY rating_rata DESC LIM
 <head>
     <meta charset="UTF-8">
     <title>Dashboard - ZIFOOD</title>
-    <script>
-        function logoutConfirm() {
-            return confirm("Yakin mau logout?");
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        :root {
+            --primary-color: #FF5722; /* Merah-Oranye Tema Utama */
+            --secondary-color: #4CAF50; /* Hijau untuk Aksi */
+            --bg-light: #f7f7f7;
+            --sidebar-width: 80px;
         }
-    </script>
+        body {
+            margin: 0;
+            font-family: 'Poppins', sans-serif;
+            background-color: var(--bg-light);
+            min-height: 100vh;
+        }
+
+        /* LAYOUT UTAMA (3 KOLOM) */
+        .dashboard-layout {
+            display: grid;
+            grid-template-columns: var(--sidebar-width) 1fr 300px; /* Sidebar | Konten | Kanan */
+            min-height: 100vh;
+            background-color: white;
+            box-shadow: 0 0 10px rgba(0,0,0,0.05);
+        }
+
+        /* 1. SIDEBAR KIRI (ICON NAV) */
+        .sidebar {
+            background-color: white;
+            border-right: 1px solid #eee;
+            padding: 20px 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .logo {
+            color: var(--primary-color);
+            font-size: 30px;
+            margin-bottom: 40px;
+        }
+        .nav-link {
+            display: block;
+            padding: 15px 0;
+            margin: 5px 0;
+            text-align: center;
+            color: #999;
+            font-size: 20px;
+            transition: color 0.2s, background-color 0.2s;
+            width: 100%;
+        }
+        .nav-link:hover, .nav-link.active {
+            color: var(--primary-color);
+            background-color: #ffece6;
+            border-left: 3px solid var(--primary-color);
+        }
+
+        /* 2. KONTEN TENGAH (SEARCH & MENU) */
+        .main-content {
+            padding: 30px;
+            overflow-y: auto;
+        }
+        .header-search {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        .search-container {
+            position: relative;
+            width: 40%;
+        }
+        .search-container input {
+            width: 100%;
+            padding: 10px 15px 10px 40px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-family: inherit;
+        }
+        .search-container i {
+            position: absolute;
+            left: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #999;
+        }
+        .user-info {
+            display: flex;
+            align-items: center;
+            font-size: 14px;
+            color: #333;
+        }
+        .user-info span {
+            margin-right: 10px;
+        }
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            background-color: #ccc;
+            border-radius: 50%;
+        }
+        
+        /* KATEGORI */
+        .category-list {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 40px;
+            overflow-x: auto;
+            padding: 10px 0;
+        }
+        .category-item {
+            text-align: center;
+            padding: 10px 15px;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            border: 1px solid #f0f0f0;
+        }
+        .category-item.active {
+            background-color: var(--primary-color);
+            color: white;
+            border-color: var(--primary-color);
+        }
+        .category-icon {
+            font-size: 24px;
+            margin-bottom: 5px;
+        }
+
+        /* MENU GRID */
+        .menu-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 25px;
+            padding-top: 15px;
+        }
+        .menu-item {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+            overflow: hidden;
+            text-align: center;
+            padding-bottom: 15px;
+            border: 1px solid #eee;
+        }
+        .menu-img {
+            width: 100%;
+            height: 150px;
+            object-fit: cover;
+            border-radius: 12px 12px 0 0;
+        }
+        .menu-details h4 {
+            margin: 10px 0 5px;
+            font-weight: 600;
+            font-size: 16px;
+        }
+        .menu-details p {
+            margin: 0;
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--primary-color);
+        }
+        .add-btn {
+            background-color: var(--secondary-color);
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 6px;
+            cursor: pointer;
+            margin-top: 10px;
+            font-weight: 500;
+        }
+
+
+        /* 3. KOLOM KANAN (MENU POPULER) */
+        .right-sidebar {
+            background-color: var(--bg-light);
+            border-left: 1px solid #eee;
+            padding: 30px 20px;
+            overflow-y: auto;
+        }
+        .popular-section h3 {
+            font-size: 18px;
+            font-weight: 600;
+            margin-top: 0;
+            border-bottom: 2px solid var(--primary-color);
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+        .popular-list {
+            list-style: none;
+            padding: 0;
+        }
+        .popular-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 15px;
+            border-bottom: 1px dashed #ddd;
+        }
+        .popular-item:last-child {
+            border-bottom: none;
+        }
+        .pop-img {
+            width: 60px;
+            height: 60px;
+            border-radius: 8px;
+            object-fit: cover;
+            margin-right: 15px;
+        }
+        .pop-details {
+            flex-grow: 1;
+        }
+        .pop-details strong {
+            display: block;
+            font-size: 14px;
+            font-weight: 600;
+        }
+        .pop-rating {
+            color: var(--primary-color);
+            font-size: 12px;
+        }
+    </style>
 </head>
 <body>
 
-    <h1>ZIFOOD</h1>
-    <h3>Selamat datang, <?= $_SESSION['username']; ?>!</h3>
+<div class="dashboard-layout">
+    
+    <div class="sidebar">
+        <div class="logo"><i class="fas fa-utensils"></i></div>
+        
+        <a href="dashboard.php" class="nav-link active" title="Dashboard"><i class="fas fa-home"></i></a>
+        <a href="keranjang.php" class="nav-link" title="Keranjang"><i class="fas fa-shopping-basket"></i></a>
+        <a href="order.php" class="nav-link" title="Order"><i class="fas fa-receipt"></i></a>
+        <a href="akun_user.php" class="nav-link" title="Akun"><i class="fas fa-user-circle"></i></a>
+        <a href="notifikasi.php" class="nav-link" title="Notifikasi"><i class="fas fa-bell"></i></a>
+        <a href="logout.php" class="nav-link" onclick="return logoutConfirm()" title="Logout"><i class="fas fa-sign-out-alt"></i></a>
+    </div>
 
-    <!-- Navbar -->
-    <nav>
-        <a href="dashboard.php">Dashboard</a> |
-        <a href="keranjang.php">Keranjang</a> |
-        <a href="order.php">Order</a> |
-        <a href="akun_user.php">Akun</a> |
-        <a href="notifikasi.php">Notifikasi</a> |
-        <a href="logout.php" onclick="return logoutConfirm()">Logout</a>
-    </nav>
-
-    <hr>
-
-    <!-- Search & Filter -->
-    <form method="GET" action="">
-        <input type="text" name="cari" placeholder="Cari makanan..." value="<?= htmlspecialchars($cari); ?>">
-        <select name="kategori">
-            <option value="">Semua Kategori</option>
-            <?php while ($k = mysqli_fetch_assoc($kategori_result)): ?>
-                <option value="<?= $k['kategori']; ?>" <?= ($filter == $k['kategori']) ? 'selected' : ''; ?>>
-                    <?= $k['kategori']; ?>
-                </option>
-            <?php endwhile; ?>
-        </select>
-        <button type="submit">Filter</button>
-    </form>
-
-    <hr>
-    <h2>Daftar Menu</h2>
-
-    <?php if (mysqli_num_rows($menu) > 0): ?>
-        <?php while ($row = mysqli_fetch_assoc($menu)): ?>
-            <div>
-                <h3><?= htmlspecialchars($row['nama_menu']); ?></h3>
-                <p>Kategori: <?= htmlspecialchars($row['kategori']); ?></p>
-                <p>Harga: Rp<?= number_format($row['harga'], 0, ',', '.'); ?></p>
-                <p>Rating: <?= number_format($row['rating_rata'], 1); ?> ⭐</p>
-
-                <form method="POST" action="tambah_keranjang.php">
-                    <input type="hidden" name="id_menu" value="<?= $row['id_menu']; ?>">
-                    <button type="submit">Tambah ke Keranjang</button>
-                </form>
-
-                <form method="GET" action="order.php">
-                    <input type="hidden" name="id_menu" value="<?= $row['id_menu']; ?>">
-                    <button type="submit">Pesan Sekarang</button>
-                </form>
+    <div class="main-content">
+        
+        <div class="header-search">
+            <div class="search-container">
+                <i class="fas fa-search"></i>
+                <form method="GET" action="" style="display:inline;">
+                    <input type="text" name="cari" placeholder="Search menu..." value="<?= htmlspecialchars($cari); ?>">
+                    </form>
             </div>
-            <hr>
-        <?php endwhile; ?>
-    <?php else: ?>
-        <p>Tidak ada menu ditemukan.</p>
-    <?php endif; ?>
+            
+            <div class="user-info">
+                <span>Halo, <strong><?= htmlspecialchars($user_data['nama'] ?? $_SESSION['username']); ?></strong>!</span>
+                <div class="user-avatar"></div>
+            </div>
+        </div>
 
-    <h2>Menu Terpopuler</h2>
-    <?php if (mysqli_num_rows($popular) > 0): ?>
-        <ul>
-            <?php while ($pop = mysqli_fetch_assoc($popular)): ?>
-                <li><?= htmlspecialchars($pop['nama_menu']); ?> - ⭐ <?= number_format($pop['rating_rata'], 1); ?></li>
-            <?php endwhile; ?>
-        </ul>
-    <?php else: ?>
-        <p>Belum ada menu populer.</p>
-    <?php endif; ?>
+        <h2>Choose Category</h2>
+        <div class="category-list">
+             <form method="GET" action="" style="display:contents;">
+                <input type="hidden" name="cari" value="<?= htmlspecialchars($cari); ?>">
+                
+                <button type="submit" name="kategori" value="" class="category-item <?= empty($filter) ? 'active' : ''; ?>">
+                    <div class="category-icon"><i class="fas fa-star"></i></div>
+                    Semua
+                </button>
+                
+                <?php while ($k = mysqli_fetch_assoc($kategori_result)): ?>
+                    <button type="submit" name="kategori" value="<?= $k['kategori']; ?>" 
+                            class="category-item <?= ($filter == $k['kategori']) ? 'active' : ''; ?>">
+                        <div class="category-icon"><i class="fas fa-utensils"></i></div>
+                        <?= htmlspecialchars($k['kategori']); ?>
+                    </button>
+                <?php endwhile; ?>
+            </form>
+        </div>
 
+        <h2>Daftar Menu</h2>
+        <?php if (mysqli_num_rows($menu) > 0): ?>
+            <div class="menu-grid">
+                <?php while ($row = mysqli_fetch_assoc($menu)): ?>
+                    <div class="menu-item">
+                        <img src="../assets/img/<?= htmlspecialchars($row['foto'] ?? 'default.jpg'); ?>" alt="<?= htmlspecialchars($row['nama_menu']); ?>" class="menu-img">
+                        <div class="menu-details">
+                            <h4><?= htmlspecialchars($row['nama_menu']); ?></h4>
+                            <p>Rp<?= number_format($row['harga'], 0, ',', '.'); ?></p>
+                            
+                            <form method="POST" action="tambah_keranjang.php">
+                                <input type="hidden" name="id_menu" value="<?= $row['id_menu']; ?>">
+                                <button type="submit" class="add-btn">Add to Cart</button>
+                            </form>
+                        </div>
+                    </div>
+                <?php endwhile; ?>
+            </div>
+        <?php else: ?>
+            <p>Tidak ada menu ditemukan di kategori ini.</p>
+        <?php endif; ?>
+
+    </div>
+
+    <div class="right-sidebar">
+        <div class="popular-section">
+            <h3>Menu Populer 🔥</h3>
+            <?php if (mysqli_num_rows($popular) > 0): ?>
+                <ul class="popular-list">
+                    <?php while ($pop = mysqli_fetch_assoc($popular)): ?>
+                        <li class="popular-item">
+                            <img src="../assets/img/<?= htmlspecialchars($pop['foto'] ?? 'default.jpg'); ?>" alt="<?= htmlspecialchars($pop['nama_menu']); ?>" class="pop-img">
+                            <div class="pop-details">
+                                <strong><?= htmlspecialchars($pop['nama_menu']); ?></strong>
+                                <span class="pop-rating">⭐ <?= number_format($pop['rating_rata'], 1); ?></span>
+                                <div>Rp<?= number_format($pop['harga'], 0, ',', '.'); ?></div>
+                            </div>
+                        </li>
+                    <?php endwhile; ?>
+                </ul>
+            <?php else: ?>
+                <p>Belum ada data menu populer.</p>
+            <?php endif; ?>
+            
+            <button class="add-btn" style="width: 100%; margin-top: 20px;">Lihat Semua Menu</button>
+        </div>
+    </div>
+
+</div>
+
+<script>
+    function logoutConfirm() {
+        return confirm("Yakin mau logout?");
+    }
+</script>
 </body>
 </html>

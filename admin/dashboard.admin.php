@@ -14,16 +14,47 @@ $totalMenu = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) AS total FR
 // Ambil total pesanan
 $totalPesanan = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) AS total FROM pesanan"))['total'] ?? 0;
 
-// Ambil total pendapatan
-// FIX 1: Mengubah 'total_harga' menjadi 'total' sesuai skema tabel pesanan.
+// Ambil total pendapatan (FIX: menggunakan kolom 'total')
 $pendapatan = mysqli_fetch_assoc(mysqli_query($conn, "SELECT SUM(total) AS total FROM pesanan WHERE status='Selesai'"))['total'] ?? 0;
 
-// Ambil 5 pesanan terbaru
-// FIX 2: Menambahkan JOIN ke tabel 'users' untuk mendapatkan kolom 'nama'.
+// Ambil 5 pesanan terbaru (FIX: menggunakan JOIN untuk nama pemesan)
 $pesananBaru = mysqli_query($conn, "SELECT p.*, u.nama FROM pesanan p JOIN users u ON p.id_user = u.id_user ORDER BY p.id_pesanan DESC LIMIT 5");
 
 // Ambil menu dengan rating tertinggi
 $menuTop = mysqli_query($conn, "SELECT * FROM menu ORDER BY rating_rata DESC LIMIT 3");
+
+
+// ==========================================================
+// LOGIKA UNTUK GRAFIK PENDAPATAN BULANAN
+// ==========================================================
+$grafikPendapatanResult = mysqli_query($conn, "
+    SELECT 
+        DATE_FORMAT(tanggal, '%Y-%m') AS bulan, 
+        SUM(total) AS total_pendapatan 
+    FROM 
+        pesanan 
+    WHERE 
+        status='Selesai' 
+    GROUP BY 
+        bulan 
+    ORDER BY 
+        bulan ASC
+");
+
+$dataBulan = [];
+$dataPendapatan = [];
+
+while ($data = mysqli_fetch_assoc($grafikPendapatanResult)) {
+    // Label Bulan (misal: 2023-11)
+    $dataBulan[] = $data['bulan'];
+    // Data Pendapatan (dikonversi ke float)
+    $dataPendapatan[] = (float)$data['total_pendapatan'];
+}
+
+// Konversi array PHP ke format JSON agar bisa digunakan di JavaScript
+$jsonBulan = json_encode($dataBulan);
+$jsonPendapatan = json_encode($dataPendapatan);
+// ==========================================================
 ?>
 
 <!DOCTYPE html>
@@ -31,6 +62,7 @@ $menuTop = mysqli_query($conn, "SELECT * FROM menu ORDER BY rating_rata DESC LIM
 <head>
     <meta charset="UTF-8">
     <title>Dashboard Admin - ZIFOOD</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
         function logoutConfirm() {
             return confirm("Yakin mau logout dari akun admin?");
@@ -55,6 +87,54 @@ $menuTop = mysqli_query($conn, "SELECT * FROM menu ORDER BY rating_rata DESC LIM
         <li>Total Pendapatan: Rp<?= number_format($pendapatan, 0, ',', '.'); ?></li>
     </ul>
 
+    <hr>
+    
+    <h2>Grafik Pendapatan Bulanan</h2>
+    <div style="width: 80%; margin: auto;">
+        <canvas id="pendapatanChart"></canvas>
+    </div>
+
+    <script>
+        // Data PHP di-inject langsung ke JavaScript
+        const labelBulan = <?= $jsonBulan; ?>;
+        const dataTotalPendapatan = <?= $jsonPendapatan; ?>;
+
+        const ctx = document.getElementById('pendapatanChart').getContext('2d');
+        const pendapatanChart = new Chart(ctx, {
+            type: 'line', // Jenis grafik garis
+            data: {
+                labels: labelBulan,
+                datasets: [{
+                    label: 'Pendapatan (Rp)',
+                    data: dataTotalPendapatan,
+                    backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                    borderColor: 'rgba(75, 192, 192, 1)',
+                    borderWidth: 2,
+                    fill: true,
+                    tension: 0.3
+                }]
+            },
+            options: {
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: 'Total Pendapatan (Rp)'
+                        }
+                    },
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'Bulan (Tahun-Bulan)'
+                        }
+                    }
+                },
+                responsive: true
+            }
+        });
+    </script>
+    
     <hr>
 
     <h2>Pesanan Terbaru</h2>
