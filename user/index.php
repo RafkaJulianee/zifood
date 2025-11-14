@@ -4,19 +4,44 @@ session_start();
 
 if ($_SERVER["REQUEST_METHOD"] === "POST") {
     $username = mysqli_real_escape_string($conn, $_POST['username']);
-    $password = md5($_POST['password']);
+    $password_md5 = md5($_POST['password']); // Kita hash passwordnya
 
-    $query = "SELECT * FROM users WHERE username='$username' AND password='$password'";
-    $result = mysqli_query($conn, $query);
+    // 1. CEK KE TABEL ADMIN
+    $query_admin = "SELECT * FROM admin WHERE username='$username' AND password='$password_md5'";
+    $result_admin = mysqli_query($conn, $query_admin);
 
-    if (mysqli_num_rows($result) === 1) {
-        $data = mysqli_fetch_assoc($result);
-        $_SESSION['id_user'] = $data['id_user'];
-        $_SESSION['username'] = $data['username'];
-        header("Location: dashboard.php");
+    if (mysqli_num_rows($result_admin) === 1) {
+        // --- LOGIN SEBAGAI ADMIN ---
+        $data_admin = mysqli_fetch_assoc($result_admin);
+        
+        // Buat session admin
+        $_SESSION['id_admin'] = $data_admin['id_admin'];
+        $_SESSION['username_admin'] = $data_admin['username'];
+        
+        // Redirect ke dashboard ADMIN
+        header("Location: ../admin/dashboard.admin.php"); // Perhatikan path ../admin/
         exit;
+
     } else {
-        echo "<script>alert('Username atau password salah!');</script>";
+        // 2. CEK KE TABEL USERS (Jika bukan admin)
+        $query_user = "SELECT * FROM users WHERE username='$username' AND password='$password_md5'";
+        $result_user = mysqli_query($conn, $query_user);
+
+        if (mysqli_num_rows($result_user) === 1) {
+            // --- LOGIN SEBAGAI USER ---
+            $data_user = mysqli_fetch_assoc($result_user);
+            
+            // Buat session user
+            $_SESSION['id_user'] = $data_user['id_user'];
+            $_SESSION['username'] = $data_user['username'];
+            
+            // Redirect ke dashboard USER
+            header("Location: dashboard.php"); 
+            exit;
+        } else {
+            // 3. GAGAL LOGIN (Tidak ditemukan di kedua tabel)
+            echo "<script>alert('Username atau password salah!');</script>";
+        }
     }
 }
 ?>
@@ -25,7 +50,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <title>Login User - Zifood</title>
+    <title>Login - Zifood</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         /* Mendefinisikan warna tema */
@@ -117,7 +142,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         
         /* FOOTER REGISTER LINK */
         .register-info {
-            /* Posisikan link daftar di bawah tombol login */
             position: static; 
             text-align: center;
             width: 100%;
@@ -132,11 +156,11 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             text-decoration: none;
         }
 
-        /* SISI KANAN: ILUSTRASI DENGAN TAG IMG DAN TEKS ABSOLUT */
+        /* SISI KANAN: ILUSTRASI */
         .illustration-side {
             flex: 1; 
             background-color: #F4F6F4; 
-            position: relative; /* Kontainer utama untuk positioning absolut */
+            position: relative; 
             overflow: hidden; 
             padding: 0; 
         }
@@ -144,40 +168,30 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         .illustration-img {
             width: 100%;
             height: 100%;
-            /* Mengisi penuh tanpa distorsi (seperti background-size: cover) */
             object-fit: cover; 
-            position: relative; /* Agar terlihat normal di flow */
+            position: relative;
         }
 
-        /* Teks di atas gambar (ditumpuk di pojok kanan bawah) */
         .marketing-text {
-            /* Diatur Absolut di Pojok Kanan Bawah */
             position: absolute; 
-            bottom: 0; /* Menempel di bawah */
-            right: 0; /* Menempel di kanan */
-            padding: 20px 25px; /* Padding dari samping */
-            
-            /* Latar belakang hitam transparan yang menutupi hanya bagian teks */
+            bottom: 0; 
+            right: 0; 
+            padding: 20px 25px; 
             background-color: rgba(0, 0, 0, 0.75); 
-            
-            /* Agar sudut kanan bawah container utama tetap melengkung */
             border-top-left-radius: 10px; 
             border-bottom-right-radius: 20px; 
-            
-            text-align: right; /* Teks rata kanan */
+            text-align: right; 
             max-width: 100%;
-            
-            /* Menghapus Flexbox center jika ada */
             align-self: flex-end;
             justify-self: flex-end;
         }
 
         .marketing-text h3 {
             color: var(--text-on-image-color); 
-            font-size: 18px; /* Dikecilkan sedikit agar muat */
+            font-size: 18px; 
             margin: 0;
             font-weight: 600;
-            text-shadow: 0 0 5px var(--text-shadow-color); /* Tambah bayangan agar lebih terbaca */
+            text-shadow: 0 0 5px var(--text-shadow-color); 
         }
     </style>
     <script>
