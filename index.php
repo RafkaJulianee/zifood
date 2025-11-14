@@ -1,10 +1,11 @@
 <?php
-include '../koneksi.php';
+// FIX 1: Path ke koneksi.php diubah (karena file ini ada di root)
+include 'koneksi.php'; 
 session_start();
 
 if ($_SERVER["REQUEST_METHOD"] === "POST") {
     $username = mysqli_real_escape_string($conn, $_POST['username']);
-    $password_md5 = md5($_POST['password']); // Kita hash passwordnya
+    $password_md5 = md5($_POST['password']); // Password di-hash
 
     // 1. CEK KE TABEL ADMIN
     $query_admin = "SELECT * FROM admin WHERE username='$username' AND password='$password_md5'";
@@ -14,12 +15,11 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         // --- LOGIN SEBAGAI ADMIN ---
         $data_admin = mysqli_fetch_assoc($result_admin);
         
-        // Buat session admin
         $_SESSION['id_admin'] = $data_admin['id_admin'];
         $_SESSION['username_admin'] = $data_admin['username'];
         
-        // Redirect ke dashboard ADMIN
-        header("Location: ../admin/dashboard.admin.php"); // Perhatikan path ../admin/
+        // FIX 2: Path ke dashboard admin diubah
+        header("Location: admin/dashboard.admin.php"); 
         exit;
 
     } else {
@@ -31,15 +31,14 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             // --- LOGIN SEBAGAI USER ---
             $data_user = mysqli_fetch_assoc($result_user);
             
-            // Buat session user
             $_SESSION['id_user'] = $data_user['id_user'];
             $_SESSION['username'] = $data_user['username'];
             
-            // Redirect ke dashboard USER
-            header("Location: dashboard.php"); 
+            // FIX 3: Path ke dashboard user diubah
+            header("Location: user/dashboard.php"); 
             exit;
         } else {
-            // 3. GAGAL LOGIN (Tidak ditemukan di kedua tabel)
+            // 3. GAGAL LOGIN
             echo "<script>alert('Username atau password salah!');</script>";
         }
     }
@@ -56,8 +55,8 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         /* Mendefinisikan warna tema */
         :root {
             --theme-color: #FF5722; /* Merah-Oranye */
-            --text-on-image-color: #FFFFFF; /* Warna teks di atas gambar (Putih) */
-            --text-shadow-color: rgba(0, 0, 0, 0.7); /* Bayangan teks agar lebih terbaca */
+            --text-on-image-color: #FFFFFF;
+            --text-shadow-color: rgba(0, 0, 0, 0.7);
         }
 
         body {
@@ -227,11 +226,11 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                 <button type="submit" class="login-btn">Login</button>
             </form>
             
-            <p class="register-info">Not a member? <a href="register.php" class="register-link">Register now</a></p>
+            <p class="register-info">Not a member? <a href="user/register.php" class="register-link">Register now</a></p>
         </div>
 
         <div class="illustration-side">
-            <img src="img/foodimg1.jpeg" alt="Delicious Food" class="illustration-img"> 
+            <img src="user/img/foodimg1.jpeg" alt="Delicious Food" class="illustration-img"> 
             
             <div class="marketing-text">
                 <h3>Make your ordering easier and organized with ZIFOOD</h3>
