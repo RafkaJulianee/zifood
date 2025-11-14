@@ -110,6 +110,7 @@ $popular = mysqli_query($conn, $popular_query);
             transition: color 0.2s, background-color 0.2s;
             width: 100%;
             position: relative; /* Penting untuk badge */
+            text-decoration: none; /* Menghilangkan garis bawah dari <a> */
         }
         .nav-link:hover, .nav-link.active {
             color: var(--primary-color);
@@ -175,8 +176,15 @@ $popular = mysqli_query($conn, $popular_query);
         .user-avatar {
             width: 40px;
             height: 40px;
-            background-color: #ccc;
+            background-color: var(--primary-color); /* Diubah dari #ccc */
             border-radius: 50%;
+            /* Properti tambahan untuk inisial */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+            font-size: 18px;
         }
         
         /* KATEGORI */
@@ -194,11 +202,18 @@ $popular = mysqli_query($conn, $popular_query);
             cursor: pointer;
             transition: background-color 0.2s;
             border: 1px solid #f0f0f0;
+            /* Pastikan button-like styling */
+            background-color: white; 
+            font-family: inherit;
+            font-size: 14px;
         }
         .category-item.active {
             background-color: var(--primary-color);
             color: white;
             border-color: var(--primary-color);
+        }
+        .category-item:hover:not(.active) {
+            background-color: #f9f9f9;
         }
         .category-icon {
             font-size: 24px;
@@ -253,6 +268,7 @@ $popular = mysqli_query($conn, $popular_query);
             justify-content: space-around;
             gap: 5px;
             margin-top: 15px;
+            padding: 0 10px; /* Tambah padding agar tombol tidak mentok */
         }
         .action-btn {
             flex: 1;
@@ -262,6 +278,7 @@ $popular = mysqli_query($conn, $popular_query);
             font-weight: 500;
             font-size: 13px;
             transition: all 0.2s;
+            font-family: inherit; /* Pastikan font konsisten */
         }
         .cart-btn {
             background-color: white;
@@ -336,6 +353,7 @@ $popular = mysqli_query($conn, $popular_query);
             cursor: pointer;
             margin-top: 20px;
             font-weight: 500;
+            font-family: inherit;
         }
     </style>
 </head>
@@ -347,9 +365,9 @@ $popular = mysqli_query($conn, $popular_query);
         <div class="logo"><i class="fas fa-utensils"></i></div>
         
         <a href="dashboard.php" class="nav-link active" title="Dashboard"><i class="fas fa-home"></i></a>
-        <a href="keranjang.php" class="nav-link" title="Keranjang"><i class="fas fa-shopping-basket"></i></a>
+        
         <a href="order.php" class="nav-link" title="Order"><i class="fas fa-receipt"></i></a>
-        <a href="akun_user.php" class="nav-link" title="Akun"><i class="fas fa-user-circle"></i></a>
+        
         
         <a href="notifikasi.php" class="nav-link" title="Notifikasi">
             <i class="fas fa-bell"></i>
@@ -374,27 +392,34 @@ $popular = mysqli_query($conn, $popular_query);
             
             <div class="user-info">
                 <span>Halo, <strong><?= htmlspecialchars($user_data['nama'] ?? $_SESSION['username']); ?></strong>!</span>
-                <div class="user-avatar"></div>
+                <div class="user-avatar">
+                    <?php
+                        // Ambil nama, jika tidak ada, pakai 'U' (User) sebagai default
+                        $nama = $user_data['nama'] ?? $_SESSION['username'] ?? 'U';
+                        // Ambil huruf pertama dan ubah jadi Kapital
+                        echo htmlspecialchars(strtoupper($nama[0]));
+                    ?>
+                </div>
             </div>
         </div>
 
         <h2>Choose Category</h2>
         <div class="category-list">
              <form method="GET" action="" style="display:contents;">
-                <input type="hidden" name="cari" value="<?= htmlspecialchars($cari); ?>">
-                
-                <button type="submit" name="kategori" value="" class="category-item <?= empty($filter) ? 'active' : ''; ?>">
-                    <div class="category-icon"><i class="fas fa-star"></i></div>
-                    Semua
-                </button>
-                
-                <?php while ($k = mysqli_fetch_assoc($kategori_result)): ?>
-                    <button type="submit" name="kategori" value="<?= $k['kategori']; ?>" 
-                            class="category-item <?= ($filter == $k['kategori']) ? 'active' : ''; ?>">
-                        <div class="category-icon"><i class="fas fa-utensils"></i></div>
-                        <?= htmlspecialchars($k['kategori']); ?>
-                    </button>
-                <?php endwhile; ?>
+                 <input type="hidden" name="cari" value="<?= htmlspecialchars($cari); ?>">
+                 
+                 <button type="submit" name="kategori" value="" class="category-item <?= empty($filter) ? 'active' : ''; ?>">
+                     <div class="category-icon"><i class="fas fa-star"></i></div>
+                     Semua
+                 </button>
+                 
+                 <?php while ($k = mysqli_fetch_assoc($kategori_result)): ?>
+                     <button type="submit" name="kategori" value="<?= $k['kategori']; ?>" 
+                             class="category-item <?= ($filter == $k['kategori']) ? 'active' : ''; ?>">
+                         <div class="category-icon"><i class="fas fa-utensils"></i></div>
+                         <?= htmlspecialchars($k['kategori']); ?>
+                     </button>
+                 <?php endwhile; ?>
             </form>
         </div>
 
@@ -450,7 +475,7 @@ $popular = mysqli_query($conn, $popular_query);
                 <p>Belum ada data menu populer (terjual).</p>
             <?php endif; ?>
             
-            <button class="add-btn" style="width: 100%; margin-top: 20px;">Lihat Semua Menu</button>
+            <button class="add-btn" style="width: 100%; margin-top: 20px;" onclick="window.location.href='dashboard.php'">Lihat Semua Menu</button>
         </div>
     </div>
 

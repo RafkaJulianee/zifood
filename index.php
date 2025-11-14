@@ -117,16 +117,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             font-family: inherit;
         }
 
-        .forgot-password {
-            display: block;
-            text-align: right;
-            color: var(--theme-color); 
-            text-decoration: none;
-            font-size: 13px;
-            margin-top: -10px;
-            margin-bottom: 30px; 
-            font-weight: 500;
-        }
+       
 
         .login-btn {
             width: 100%;
@@ -223,8 +214,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                 <input type="text" name="username" id="username" placeholder="Username" required class="input-field"><br>
 
                 <input type="password" name="password" id="password" placeholder="Password" required class="input-field">
-                
-                <a href="#" class="forgot-password">Forgot Password?</a>
+               
                 
                 <button type="submit" class="login-btn">Login</button>
             </form>
