@@ -364,12 +364,7 @@ $popular = mysqli_query($conn, $popular_query);
     
     <div class="sidebar">
         <div class="logo"><i class="fas fa-utensils"></i></div>
-        
         <a href="dashboard.php" class="nav-link active" title="Dashboard"><i class="fas fa-home"></i></a>
-        
-        <a href="order.php" class="nav-link" title="Order"><i class="fas fa-receipt"></i></a>
-        
-        
         <a href="notifikasi.php" class="nav-link" title="Notifikasi">
             <i class="fas fa-bell"></i>
             <?php if ($unread_notif_count > 0): ?>
