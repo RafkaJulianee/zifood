@@ -105,6 +105,7 @@ function time_ago($timestamp) {
 <head>
     <meta charset="UTF-8">
     <title>Notifikasi - ZIFOOD</title>
+    <link rel="shortcut icon" href="user/img/zifood.png" type="image/x-icon">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <style>

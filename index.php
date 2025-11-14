@@ -53,6 +53,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 <head>
     <meta charset="UTF-8">
     <title>Login - Zifood</title>
+    <link rel="shortcut icon" href="user/img/zifood.png" type="image/x-icon">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         /* Mendefinisikan warna tema */
@@ -122,7 +123,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         .login-btn {
             width: 100%;
             padding: 12px;
-            background-color: black; 
+            background-color:#ffa07a; 
             color: white;
             border: none;
             border-radius: 8px;
