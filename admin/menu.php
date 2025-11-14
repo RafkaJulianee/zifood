@@ -4,7 +4,7 @@ include '../koneksi.php';
 
 // Cek apakah admin sudah login
 if (!isset($_SESSION['id_admin'])) {
-    header("Location: login.php");
+    header("Location: ../index.php");
     exit;
 }
 

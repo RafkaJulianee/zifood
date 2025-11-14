@@ -5,7 +5,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     $username = mysqli_real_escape_string($conn, $_POST['username']);
     $password = mysqli_real_escape_string($conn, $_POST['password']);
     $nama = mysqli_real_escape_string($conn, $_POST['nama']);
-    // --- FIX 1: Ambil data alamat dari POST request ---
+    // Ambil data alamat dari POST request
     $alamat = mysqli_real_escape_string($conn, $_POST['alamat']);
 
     // Cek apakah username sudah dipakai
@@ -18,12 +18,16 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             exit;
         }
 
-        $password_hash = md5($password);
-        // --- FIX 2: Perbarui query INSERT untuk memasukkan kolom 'alamat' ---
+        // --- FIX: Menghapus MD5() agar password disimpan sebagai teks biasa ---
+        $password_hash = $password; 
+        
+        // Query INSERT untuk memasukkan kolom 'alamat'
         $query = "INSERT INTO users (username, password, nama, alamat)
                   VALUES ('$username', '$password_hash', '$nama', '$alamat')";
+                  
         if (mysqli_query($conn, $query)) {
-            echo "<script>alert('Registrasi berhasil! Silakan login.');window.location='index.php';</script>";
+            // Arahkan kembali ke index.php (login) setelah berhasil
+            echo "<script>alert('Registrasi berhasil! Silakan login.');window.location='../index.php';</script>";
         } else {
             echo "<script>alert('Registrasi gagal! " . mysqli_error($conn) . "');</script>";
         }
@@ -38,10 +42,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     <title>Daftar Akun - Zifood</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        /* ==================================== */
         /* CSS DARI DESIGN LOGIN (INDEX.PHP) */
-        /* ==================================== */
-
         :root {
             --theme-color: #FF5722;
             --text-on-image-color: #FFFFFF;
@@ -133,7 +134,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             text-decoration: none;
         }
 
-        /* SISI KANAN: ILUSTRASI DENGAN TAG IMG DAN OVERLAY */
+        /* SISI KANAN: ILUSTRASI */
         .illustration-side {
             flex: 1; 
             background-color: #F4F6F4; 
@@ -174,7 +175,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     </style>
     <script>
         function validateForm() {
-            // Kita juga bisa tambahkan validasi untuk field alamat (tidak kosong) di sini.
             const password = document.getElementById("password").value;
 
             if (password.length < 8) {
@@ -203,7 +203,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                 <button type="submit" class="login-btn">Daftar</button>
             </form>
             
-            <p class="register-info">Sudah punya akun? <a href="index.php" class="register-link">Login</a></p>
+            <p class="register-info">Sudah punya akun? <a href="../index.php" class="register-link">Login</a></p>
         </div>
 
         <div class="illustration-side">

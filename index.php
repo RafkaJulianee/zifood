@@ -1,14 +1,17 @@
 <?php
-// FIX 1: Path ke koneksi.php diubah (karena file ini ada di root)
+// Path ke koneksi.php (diasumsikan berada di folder yang sama)
 include 'koneksi.php'; 
 session_start();
 
 if ($_SERVER["REQUEST_METHOD"] === "POST") {
     $username = mysqli_real_escape_string($conn, $_POST['username']);
-    $password_md5 = md5($_POST['password']); // Password di-hash
+    
+    // --- FIX: KITA HAPUS FUNGSI MD5() ---
+    // Kita ambil password mentah (plain text) langsung dari form
+    $password_plain = mysqli_real_escape_string($conn, $_POST['password']);
 
-    // 1. CEK KE TABEL ADMIN
-    $query_admin = "SELECT * FROM admin WHERE username='$username' AND password='$password_md5'";
+    // 1. CEK KE TABEL ADMIN (Menggunakan password TEKS BIASA)
+    $query_admin = "SELECT * FROM admin WHERE username='$username' AND password='$password_plain'";
     $result_admin = mysqli_query($conn, $query_admin);
 
     if (mysqli_num_rows($result_admin) === 1) {
@@ -18,13 +21,13 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         $_SESSION['id_admin'] = $data_admin['id_admin'];
         $_SESSION['username_admin'] = $data_admin['username'];
         
-        // FIX 2: Path ke dashboard admin diubah
+        // Arahkan ke dashboard ADMIN
         header("Location: admin/dashboard.admin.php"); 
         exit;
 
     } else {
-        // 2. CEK KE TABEL USERS (Jika bukan admin)
-        $query_user = "SELECT * FROM users WHERE username='$username' AND password='$password_md5'";
+        // 2. CEK KE TABEL USERS (Juga menggunakan password TEKS BIASA)
+        $query_user = "SELECT * FROM users WHERE username='$username' AND password='$password_plain'";
         $result_user = mysqli_query($conn, $query_user);
 
         if (mysqli_num_rows($result_user) === 1) {
@@ -34,7 +37,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             $_SESSION['id_user'] = $data_user['id_user'];
             $_SESSION['username'] = $data_user['username'];
             
-            // FIX 3: Path ke dashboard user diubah
+            // Arahkan ke dashboard USER
             header("Location: user/dashboard.php"); 
             exit;
         } else {
