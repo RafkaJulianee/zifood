@@ -306,7 +306,7 @@ $menu = mysqli_query($conn, "SELECT * FROM menu ORDER BY id_menu DESC");
     <div class="main-content">
         <div class="header-action">
             <div>
-                <a href="dashboard.admin.php" class="back-link"><i class="fas fa-arrow-left"></i> Dashboard</a>
+               
                 <h1>Daftar Menu Makanan</h1>
             </div>
             <a href="tambah.php" class="btn-add"><i class="fas fa-plus"></i> Tambah Menu Baru</a>
