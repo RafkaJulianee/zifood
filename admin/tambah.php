@@ -328,7 +328,6 @@ if (isset($_POST['tambah'])) {
         
         <div class="form-card">
             <div class="header-action">
-                <a href="menu.php" class="back-link"><i class="fas fa-arrow-left"></i> Daftar Menu</a>
                 <h2>Input Menu Baru</h2>
             </div>
 
