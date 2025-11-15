@@ -350,13 +350,8 @@ function time_ago($timestamp) {
 <div class="dashboard-layout">
     
     <div class="sidebar">
-        <div class="logo"><i class="fas fa-utensils"></i></div>
-        
-        <a href="dashboard.php" class="nav-link" title="Dashboard"><i class="fas fa-home"></i></a>
-        <a href="keranjang.php" class="nav-link" title="Keranjang"><i class="fas fa-shopping-basket"></i></a>
-        <a href="order.php" class="nav-link" title="Order"><i class="fas fa-receipt"></i></a>
-        <a href="akun_user.php" class="nav-link" title="Akun"><i class="fas fa-user-circle"></i></a>
-        
+        <div class="logo"><i class="fas fa-utensils"></i></div>     
+        <a href="dashboard.php" class="nav-link" title="Dashboard"><i class="fas fa-home"></i></a>  
         <a href="notifikasi.php" class="nav-link active" title="Notifikasi">
             <i class="fas fa-bell"></i>
             <?php if ($unread_notif_count > 0): ?>
