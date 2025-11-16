@@ -44,25 +44,55 @@ $total = $subtotal + $ongkir_default;
 
 // Logika Submit Pesanan
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $final_alamat = mysqli_real_escape_string($conn, $_POST['delivery_address']);
-    $final_nohp = mysqli_real_escape_string($conn, $_POST['whatsapp_phone']);
-    $final_catatan = mysqli_real_escape_string($conn, $_POST['catatan']); // FIX: Mengambil Catatan
-    $final_ongkir = (int)$_POST['ongkir_final'];
-    $final_total = (int)$_POST['total_final'];
     
-    // Perbarui no_hp user jika berbeda (opsional)
-    if ($final_nohp != $user_data['no_hp']) {
-         mysqli_query($conn, "UPDATE users SET no_hp='$final_nohp' WHERE id_user='$id_user'");
-    }
-    
-    // Insert Pesanan Baru
-    $query = "INSERT INTO pesanan (id_user, id_menu, jumlah, alamat, catatan, metode, ongkir, total, status)
-              VALUES ('$id_user', '$id_menu', '$qty', '$final_alamat', '$final_catatan', 'Bayar di Tempat (COD)', '$final_ongkir', '$final_total', 'Menunggu')";
-    
-    if (mysqli_query($conn, $query)) {
+    // [MODIFIKASI] Ambil mode pemesanan
+    $mode_pemesanan = mysqli_real_escape_string($conn, $_POST['mode_pemesanan']);
+
+    if ($mode_pemesanan === 'online') {
+        // --- LOGIKA UNTUK ONLINE (DELIVERY) ---
+        $final_alamat = mysqli_real_escape_string($conn, $_POST['delivery_address']);
+        $final_nohp = mysqli_real_escape_string($conn, $_POST['whatsapp_phone']);
+        $final_catatan = mysqli_real_escape_string($conn, $_POST['catatan']);
+        $final_ongkir = (int)$_POST['ongkir_final'];
+        $final_total = (int)$_POST['total_final'];
+        $metode_bayar = 'Bayar di Tempat (COD)';
+        $status_pesan = 'Menunggu'; // Status untuk online
+
+        // Perbarui no_hp user jika berbeda
+        if ($final_nohp != $user_data['no_hp']) {
+             mysqli_query($conn, "UPDATE users SET no_hp='$final_nohp' WHERE id_user='$id_user'");
+        }
         // Alamat dan Nomor HP di-update
         mysqli_query($conn, "UPDATE users SET alamat='$final_alamat', no_hp='$final_nohp' WHERE id_user='$id_user'");
-        echo "<script>alert('Pesanan berhasil dibuat! Menunggu konfirmasi.'); window.location='order.php';</script>";
+
+        $query = "INSERT INTO pesanan (id_user, id_menu, jumlah, alamat, catatan, metode, ongkir, total, status)
+                    VALUES ('$id_user', '$id_menu', '$qty', '$final_alamat', '$final_catatan', '$metode_bayar', '$final_ongkir', '$final_total', '$status_pesan')";
+    
+    } else {
+        // --- LOGIKA UNTUK OFFLINE (DINE-IN) ---
+        // Kita perlu sedikit mengubah logika PHP
+        $nama_pemesan_offline = mysqli_real_escape_string($conn, $_POST['nama_pemesan_offline']);
+        $nomor_meja = mysqli_real_escape_string($conn, $_POST['nomor_meja']);
+        $final_nohp_offline = mysqli_real_escape_string($conn, $_POST['whatsapp_phone_offline']);
+        $final_catatan_offline = mysqli_real_escape_string($conn, $_POST['catatan_offline']);
+        
+        // Untuk dine-in, kita simpan info meja di kolom 'alamat' atau 'catatan'
+        $alamat_dine_in = "Dine-in: $nama_pemesan_offline (Meja $nomor_meja)";
+        $catatan_dine_in = $final_catatan_offline; // (No. HP: $final_nohp_offline)
+        
+        $final_ongkir = 0; // Tidak ada ongkir untuk dine-in
+        $final_total = (int)($subtotal); // Total hanya subtotal
+        $metode_bayar = 'Bayar di Kasir';
+        $status_pesan = 'Dine-in'; // Status khusus untuk offline
+
+        $query = "INSERT INTO pesanan (id_user, id_menu, jumlah, alamat, catatan, metode, ongkir, total, status)
+                    VALUES ('$id_user', '$id_menu', '$qty', '$alamat_dine_in', '$catatan_dine_in', '$metode_bayar', '$final_ongkir', '$final_total', '$status_pesan')";
+    }
+
+
+    // Eksekusi query
+    if (mysqli_query($conn, $query)) {
+        echo "<script>alert('Pesanan berhasil dibuat!'); window.location='order.php';</script>";
     } else {
         echo "<script>alert('Gagal membuat pesanan: " . mysqli_error($conn) . "');</script>";
     }
@@ -103,12 +133,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             border-radius: var(--border-radius);
             box-shadow: 0 4px 20px rgba(0,0,0,0.1);
             overflow: hidden;
+            margin: 20px 0; /* Menambah margin atas/bawah */
         }
         /* Kiri: Form */
         .form-area {
             flex: 2;
             padding: 40px;
             overflow-y: auto;
+            max-height: 90vh; /* Batasi tinggi form */
         }
         .form-area > a {
             color: var(--text-dark);
@@ -139,7 +171,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         .input-row > div, .full-row {
             flex: 1;
         }
-        input[type="text"], input[type="number"], select, textarea {
+        input[type="text"], input[type="number"], input[type="email"], select, textarea {
             width: 100%;
             padding: 12px;
             border: 1px solid #ddd;
@@ -170,6 +202,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             transition: all 0.2s;
             font-weight: 600;
             color: var(--text-dark);
+            font-size: 14px; /* Menyamakan font size */
         }
         .option-toggle button.active {
             background-color: #ffece6;
@@ -324,6 +357,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             updateOngkirAndTotal();
         }
 
+        // --- [JAVASCRIPT BARU UNTUK LANGKAH 2] ---
+        // (Kita akan isi ini nanti)
+        // --- [AKHIR JAVASCRIPT BARU] ---
+
+
         document.addEventListener('DOMContentLoaded', function() {
             // Inisialisasi: Gunakan alamat terdaftar
             toggleAddress(true);
@@ -347,63 +385,109 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <hr>
 
             <div class="form-group">
-                <h3>1. Contact Information</h3>
-                <div class="input-row">
-                    <div>
-                        <label>First Name</label>
-                        <input type="text" value="<?= htmlspecialchars($first_name); ?>" disabled>
-                    </div>
-                    <div>
-                        <label>Last Name</label>
-                        <input type="text" value="<?= htmlspecialchars($last_name); ?>" disabled>
-                    </div>
-                </div>
-                <div class="input-row">
-                    <div>
-                        <label>No. WhatsApp</label>
-                        <input type="text" name="whatsapp_phone" value="<?= htmlspecialchars($user_data['no_hp']); ?>" placeholder="Contoh: 0812xxxx" required>
-                    </div>
-                    <div>
-                        <label>E-mail (Disabled)</label>
-                        <input type="email" value="Email tidak digunakan" disabled>
-                    </div>
-                </div>
-            </div>
-
-            <div class="form-group">
-                <h3>2. Delivery Details</h3>
-                <label>Pilih Alamat Pengiriman (Maksimum 5 km dari Restoran)</label>
+                <h3>Mode Pemesanan</h3>
                 <div class="option-toggle">
-                    <button type="button" id="btn_registered" onclick="toggleAddress(true)"><i class="fas fa-home"></i> Alamat Terdaftar</button>
-                    <button type="button" id="btn_new" onclick="toggleAddress(false)"><i class="fas fa-map-marker-alt"></i> Alamat Baru</button>
-                </div>
-                
-                <div class="full-row" style="margin-top: 15px;">
-                    <label>Alamat Lengkap</label>
-                    <textarea id="alamat_delivery_input" name="delivery_address_input" required></textarea>
-                </div>
-
-                <div class="input-row" style="margin-top: 15px;">
-                    <div class="form-control">
-                        <label>SIMULASI Jarak (KM)</label>
-                        <input type="number" id="jarak_input" value="0" min="0" max="5" step="1">
-                    </div>
-                    <div class="form-control">
-                        <label>Status Pengiriman</label>
-                        <strong id="delivery_status" style="font-size: 16px; display: block; padding: 10px 0;">Menghitung...</strong>
-                    </div>
-                </div>
-                <div class="full-row">
-                    <label>Catatan (Opsional)</label>
-                    <input type="text" name="catatan" placeholder="Contoh: Jangan terlalu pedas, antar ke pintu belakang.">
+                    <button type="button" id="btn_mode_online" class="active" onclick="toggleMode('online')">
+                        <i class="fas fa-motorcycle"></i> Online (Delivery)
+                    </button>
+                    <button type="button" id="btn_mode_offline" onclick="toggleMode('offline')">
+                        <i class="fas fa-store-alt"></i> Offline (Dine-in)
+                    </button>
                 </div>
             </div>
+            <div id="form_online_wrapper"> 
+                
+                <div class="form-group">
+                    <h3>1. Contact Information</h3>
+                    <div class="input-row">
+                        <div>
+                            <label>First Name</label>
+                            <input type="text" value="<?= htmlspecialchars($first_name); ?>" disabled>
+                        </div>
+                        <div>
+                            <label>Last Name</label>
+                            <input type="text" value="<?= htmlspecialchars($last_name); ?>" disabled>
+                        </div>
+                    </div>
+                    <div class="input-row">
+                        <div>
+                            <label>No. WhatsApp</label>
+                            <input type="text" name="whatsapp_phone" value="<?= htmlspecialchars($user_data['no_hp']); ?>" placeholder="Contoh: 0812xxxx" required>
+                        </div>
+                        <div>
+                            <label>E-mail (Disabled)</label>
+                            <input type="email" value="Email tidak digunakan" disabled>
+                        </div>
+                    </div>
+                </div>
 
+                <div class="form-group">
+                    <h3>2. Delivery Details</h3>
+                    <label>Pilih Alamat Pengiriman (Maksimum 5 km dari Restoran)</label>
+                    <div class="option-toggle">
+                        <button type="button" id="btn_registered" onclick="toggleAddress(true)"><i class="fas fa-home"></i> Alamat Terdaftar</button>
+                        <button type="button" id="btn_new" onclick="toggleAddress(false)"><i class="fas fa-map-marker-alt"></i> Alamat Baru</button>
+                    </div>
+                    
+                    <div class="full-row" style="margin-top: 15px;">
+                        <label>Alamat Lengkap</label>
+                        <textarea id="alamat_delivery_input" name="delivery_address_input" required></textarea>
+                    </div>
+
+                    <div class="input-row" style="margin-top: 15px;">
+                        <div class="form-control">
+                            <label>SIMULASI Jarak (KM)</label>
+                            <input type="number" id="jarak_input" value="0" min="0" max="5" step="1">
+                        </div>
+                        <div class="form-control">
+                            <label>Status Pengiriman</label>
+                            <strong id="delivery_status" style="font-size: 16px; display: block; padding: 10px 0;">Menghitung...</strong>
+                        </div>
+                    </div>
+                    <div class="full-row">
+                        <label>Catatan (Opsional)</label>
+                        <input type="text" name="catatan" placeholder="Contoh: Jangan terlalu pedas, antar ke pintu belakang.">
+                    </div>
+                </div>
+            </div> 
+            <div id="form_offline_wrapper" style="display: none;">
+                <div class="form-group">
+                    <h3>1. Detail Pemesan (Dine-in)</h3>
+                    
+                    <div class="input-row">
+                        <div>
+                            <label>Nama Pemesan</label>
+                            <input type="text" name="nama_pemesan_offline" id="nama_pemesan_offline" value="<?= htmlspecialchars($first_name . ' ' . $last_name); ?>">
+                        </div>
+                        <div>
+                            <label>Nomor Meja</label>
+                            <select name="nomor_meja" id="nomor_meja">
+                                <?php for ($i = 1; $i <= 20; $i++): ?>
+                                    <option value="<?= $i; ?>">Meja <?= $i; ?></option>
+                                <?php endfor; ?>
+                                </select>
+                        </div>
+                    </div>
+                    
+                    <div class="full-row" style="margin-top: 15px;">
+                        <label>No. WhatsApp (Opsional untuk Dine-in)</label>
+                        <input type="text" name="whatsapp_phone_offline" value="<?= htmlspecialchars($user_data['no_hp']); ?>">
+                    </div>
+
+                    <div class="full-row" style="margin-top: 15px;">
+                        <label>Catatan (Opsional)</label>
+                        <input type="text" name="catatan_offline" placeholder="Contoh: Jangan terlalu pedas">
+                    </div>
+
+                </div>
+            </div>
             <div class="form-group">
                 <h3>3. Payment Method</h3>
-                <label>Metode Pembayaran (Hanya Bayar di Tempat yang tersedia)</label>
+                <label>Metode Pembayaran</label>
                 <div class="option-toggle">
-                    <button type="button" class="active" style="flex: none; padding: 10px 20px;"><i class="fas fa-money-bill-wave"></i> Bayar di Tempat (COD)</button>
+                     <button type="button" id="payment_method_display" class="active" style="flex: none; padding: 10px 20px;">
+                        <i class="fas fa-money-bill-wave"></i> Bayar di Tempat (COD)
+                    </button>
                 </div>
             </div>
             
@@ -438,6 +522,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <input type="hidden" name="id_menu" value="<?= $id_menu; ?>">
             <input type="hidden" name="delivery_address" id="delivery_address_final" value="<?= htmlspecialchars($user_data['alamat']); ?>">
             
+            <input type="hidden" name="mode_pemesanan" id="mode_pemesanan" value="online">
+
             <button type="submit" class="btn-checkout" id="checkout_btn_submit">
                 Checkout & Pesan
             </button>

@@ -70,6 +70,14 @@ $popular = mysqli_query($conn, $popular_query);
             --secondary-color: #4CAF50; /* Hijau untuk Aksi */
             --bg-light: #f7f7f7;
             --sidebar-width: 80px;
+            
+            /* --- VARS BARU UNTUK DESAIN --- */
+            --shadow-light: 0 4px 12px rgba(0,0,0,0.06);
+            --shadow-medium: 0 4px 12px rgba(0, 0, 0, 0.08), 0 12px 32px rgba(0, 0, 0, 0.12);
+            --shadow-soft: 0 2px 8px rgba(0, 0, 0, 0.04), 0 8px 24px rgba(0, 0, 0, 0.08);
+            --transition-fast: all 0.2s ease;
+            --transition-slow: all 0.3s ease;
+            /* --- AKHIR VARS BARU --- */
         }
         body {
             margin: 0;
@@ -108,7 +116,7 @@ $popular = mysqli_query($conn, $popular_query);
             text-align: center;
             color: #999;
             font-size: 20px;
-            transition: color 0.2s, background-color 0.2s;
+            transition: var(--transition-fast); /* DIPERBARUI */
             width: 100%;
             position: relative; /* Penting untuk badge */
             text-decoration: none; /* Menghilangkan garis bawah dari <a> */
@@ -188,25 +196,28 @@ $popular = mysqli_query($conn, $popular_query);
             font-size: 18px;
         }
         
-        /* KATEGORI */
+        /* ================================== */
+        /* KATEGORI (DIPERBARUI) */
+        /* ================================== */
         .category-list {
             display: flex;
-            gap: 15px;
+            gap: 10px; /* Jarak antar 'pill' */
             margin-bottom: 40px;
             overflow-x: auto;
             padding: 10px 0;
         }
         .category-item {
             text-align: center;
-            padding: 10px 15px;
-            border-radius: 10px;
+            padding: 8px 18px; /* Padding untuk 'pill' */
+            border-radius: 30px; /* Membuat 'pill' */
             cursor: pointer;
-            transition: background-color 0.2s;
-            border: 1px solid #f0f0f0;
-            /* Pastikan button-like styling */
+            transition: var(--transition-fast);
+            border: 1px solid #eee; /* Border lebih soft */
             background-color: white; 
             font-family: inherit;
             font-size: 14px;
+            font-weight: 500; /* Sedikit lebih tebal */
+            white-space: nowrap; /* Mencegah teks turun */
         }
         .category-item.active {
             background-color: var(--primary-color);
@@ -215,13 +226,13 @@ $popular = mysqli_query($conn, $popular_query);
         }
         .category-item:hover:not(.active) {
             background-color: #f9f9f9;
+            border-color: #ddd;
         }
-        .category-icon {
-            font-size: 24px;
-            margin-bottom: 5px;
-        }
+        /* .category-icon dihapus karena tidak dipakai lagi di HTML */
 
-        /* MENU GRID */
+        /* ================================== */
+        /* MENU GRID (DIPERBARUI) */
+        /* ================================== */
         .menu-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
@@ -231,12 +242,21 @@ $popular = mysqli_query($conn, $popular_query);
         .menu-item {
             background: white;
             border-radius: 12px;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+            /* Bayangan (shadow) yang lebih halus */
+            box-shadow: var(--shadow-soft);
+            transition: var(--transition-slow); /* Transisi untuk hover */
+            border: 1px solid #f0f0f0; /* Border lebih soft */
+            
             overflow: hidden;
             text-align: center;
             padding-bottom: 15px;
-            border: 1px solid #eee;
         }
+        /* Efek hover 'mengangkat' pada kartu menu */
+        .menu-item:hover {
+            transform: translateY(-5px);
+            box-shadow: var(--shadow-medium);
+        }
+        
         .menu-img {
             width: 100%;
             height: 150px;
@@ -269,17 +289,17 @@ $popular = mysqli_query($conn, $popular_query);
             justify-content: space-around;
             gap: 5px;
             margin-top: 15px;
-            padding: 0 10px; /* Tambah padding agar tombol tidak mentok */
+            padding: 0 10px; 
         }
         .action-btn {
             flex: 1;
-            padding: 8px 5px;
+            padding: 10px 8px; /* Sedikit lebih besar */
             border-radius: 6px;
             cursor: pointer;
             font-weight: 500;
             font-size: 13px;
-            transition: all 0.2s;
-            font-family: inherit; /* Pastikan font konsisten */
+            transition: var(--transition-fast); /* Transisi untuk hover */
+            font-family: inherit; 
         }
         .cart-btn {
             background-color: white;
@@ -315,14 +335,35 @@ $popular = mysqli_query($conn, $popular_query);
         .popular-list {
             list-style: none;
             padding: 0;
+            /* Tambahkan sedikit jarak antar mini-card */
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
         }
+        
+        /* ================================== */
+        /* ITEM POPULER (DIPERBARUI) */
+        /* ================================== */
         .popular-item {
             display: flex;
             align-items: center;
-            margin-bottom: 15px;
-            padding-bottom: 15px;
-            border-bottom: 1px dashed #ddd;
+            
+            /* Mengganti border putus-putus menjadi 'mini-card' */
+            background: white;
+            border-radius: 10px;
+            padding: 10px;
+            box-shadow: var(--shadow-light);
+            transition: var(--transition-fast);
+            
+            /* Hapus margin dan border bottom lama */
+            margin-bottom: 0; 
+            padding-bottom: 10px;
+            border-bottom: none; 
         }
+        .popular-item:hover {
+            background-color: #fffaf8; /* Warna hover orange-pucat */
+        }
+        
         .popular-item:last-child {
             border-bottom: none;
         }
@@ -355,6 +396,10 @@ $popular = mysqli_query($conn, $popular_query);
             margin-top: 20px;
             font-weight: 500;
             font-family: inherit;
+            transition: var(--transition-fast); /* Transisi untuk hover */
+        }
+        .right-sidebar .add-btn:hover {
+            opacity: 0.9;
         }
     </style>
 </head>
@@ -405,18 +450,16 @@ $popular = mysqli_query($conn, $popular_query);
                  <input type="hidden" name="cari" value="<?= htmlspecialchars($cari); ?>">
                  
                  <button type="submit" name="kategori" value="" class="category-item <?= empty($filter) ? 'active' : ''; ?>">
-                     <div class="category-icon"><i class="fas fa-star"></i></div>
                      Semua
                  </button>
                  
                  <?php while ($k = mysqli_fetch_assoc($kategori_result)): ?>
                      <button type="submit" name="kategori" value="<?= $k['kategori']; ?>" 
                              class="category-item <?= ($filter == $k['kategori']) ? 'active' : ''; ?>">
-                         <div class="category-icon"><i class="fas fa-utensils"></i></div>
                          <?= htmlspecialchars($k['kategori']); ?>
                      </button>
                  <?php endwhile; ?>
-            </form>
+             </form>
         </div>
 
         <h2>Daftar Menu</h2>
