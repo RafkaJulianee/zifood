@@ -208,8 +208,8 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 <body>
     <div class="main-container">
         <div class="login-side">
-            <h1 class="welcome-text">Welcome back!</h1>
-            <p class="tagline">Simplify your workflow and boost your productivity with Zifood App. Get started for free.</p>
+            <h1 class="welcome-text">Selamat Datang Kembali</h1>
+            <p class="tagline">Zifood Pesan makanan favoritmu dengan cepat, mudah, dan tanpa ribet.</p>
 
             <form method="POST" action="" onsubmit="return validateLogin()">
                 <input type="text" name="username" id="username" placeholder="Username" required class="input-field"><br>
@@ -220,7 +220,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                 <button type="submit" class="login-btn">Login</button>
             </form>
             
-            <p class="register-info">Not a member? <a href="user/register.php" class="register-link">Register now</a></p>
+            <p class="register-info">Belum Punya Akun? <a href="user/register.php" class="register-link">Registrasi Sekarang</a></p>
         </div>
 
         <div class="illustration-side">
