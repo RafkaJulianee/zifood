@@ -378,7 +378,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <hr>
 
             <div class="form-group">
-                <h3>1. Contact Information</h3>
+                <h3>1. Metode Pengambilan</h3>
+                <div class="option-toggle">
+                    <button type="button" id="btn_delivery" onclick="toggleMetode('Delivery')"><i class="fas fa-truck"></i> Delivery</button>
+                    <button type="button" id="btn_dinein" onclick="toggleMetode('Dine-in')"><i class="fas fa-store"></i> Dine-in (Makan di Tempat)</button>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <h3>2. Contact Information</h3>
                 <div class="input-row">
                     <div>
                         <label>First Name</label>
@@ -394,14 +402,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <label>No. WhatsApp</label>
                         <input type="text" name="whatsapp_phone" value="<?= htmlspecialchars($user_data['no_hp']); ?>" placeholder="Contoh: 0812xxxx" required>
                     </div>
-                </div>
-            </div>
-
-            <div class="form-group">
-                <h3>2. Metode Pengambilan</h3>
-                <div class="option-toggle">
-                    <button type="button" id="btn_delivery" onclick="toggleMetode('Delivery')"><i class="fas fa-truck"></i> Delivery</button>
-                    <button type="button" id="btn_dinein" onclick="toggleMetode('Dine-in')"><i class="fas fa-store"></i> Dine-in (Makan di Tempat)</button>
                 </div>
             </div>
 
