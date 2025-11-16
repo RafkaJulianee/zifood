@@ -188,22 +188,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             text-shadow: 0 0 5px var(--text-shadow-color); 
         }
     </style>
-    <script>
-        function validateLogin() {
-            const user = document.getElementById("username").value.trim();
-            const pass = document.getElementById("password").value.trim();
-
-            if (user === "" || pass === "") {
-                alert("Username dan Password tidak boleh kosong!");
-                return false;
-            }
-            if (pass.length < 8) {
-                alert("Password harus minimal 8 karakter!");
-                return false;
-            }
-            return true;
-        }
-    </script>
 </head>
 <body>
     <div class="main-container">
@@ -231,5 +215,21 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             </div>
         </div>
     </div>
+       <script>
+        function validateLogin() {
+            const user = document.getElementById("username").value.trim();
+            const pass = document.getElementById("password").value.trim();
+
+            if (user === "" || pass === "") {
+                alert("Username dan Password tidak boleh kosong!");
+                return false;
+            }
+            if (pass.length < 8) {
+                alert("Password harus minimal 8 karakter!");
+                return false;
+            }
+            return true;
+        }
+    </script>
 </body>
 </html>
