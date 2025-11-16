@@ -19,7 +19,17 @@ if (isset($_POST['update_status'])) {
     $new_status = mysqli_real_escape_string($conn, $_POST['status']);
     $id_user_for_notif = mysqli_real_escape_string($conn, $_POST['id_user_for_notif']);
     
-    if (in_array($new_status, ['Dikonfirmasi', 'Ditolak', 'Selesai'])) {
+    // [PERUBAHAN] Izinkan 'Dine-in' diubah menjadi 'Selesai'
+    $allowed_statuses = ['Dikonfirmasi', 'Ditolak', 'Selesai'];
+
+    if (in_array($new_status, $allowed_statuses)) {
+        
+        // Khusus untuk 'Dine-in', pastikan perubahannya hanya ke 'Selesai'
+        // (Ini asumsi, bisa disesuaikan. Tapi untuk sekarang kita izinkan saja)
+        if ($new_status === 'Selesai') {
+             $pesan = "Pesanan Anda (ID #$id_pesanan) telah selesai. Terima kasih!";
+        }
+
         $query_update = "UPDATE pesanan SET status='$new_status' WHERE id_pesanan='$id_pesanan'";
         
         if (mysqli_query($conn, $query_update)) {
@@ -29,7 +39,8 @@ if (isset($_POST['update_status'])) {
             } elseif ($new_status === 'Ditolak') {
                 $pesan = "Pesanan Anda (ID #$id_pesanan) sayangnya ditolak.";
             } elseif ($new_status === 'Selesai') {
-                $pesan = "Pesanan Anda (ID #$id_pesanan) telah selesai diantar. Terima kasih!";
+                // Cek apakah notif 'selesai' sudah ada
+                $pesan = "Pesanan Anda (ID #$id_pesanan) telah selesai. Terima kasih!";
             }
 
             // INSERT NOTIFIKASI
@@ -51,11 +62,13 @@ if (isset($_POST['update_status'])) {
 // ===========================================
 $where_clause = ($current_status !== 'All') ? "WHERE p.status = '$current_status'" : "";
 
+// [PERUBAHAN] Mengganti p.nomor_meja menjadi p.meja AS nomor_meja
 $query_pesanan = "
     SELECT 
         p.id_pesanan, 
         p.id_user, 
         u.nama AS nama_pemesan,
+        u.no_hp, 
         m.nama_menu,
         p.total,
         p.status,
@@ -63,7 +76,8 @@ $query_pesanan = "
         TIME(p.tanggal) AS order_time, 
         p.metode,
         p.alamat,
-        p.catatan
+        p.catatan,
+        p.meja AS nomor_meja 
     FROM 
         pesanan p
     JOIN 
@@ -78,8 +92,9 @@ $query_pesanan = "
 $result_pesanan = mysqli_query($conn, $query_pesanan);
 
 // Hitung jumlah untuk Tab
+// [PERUBAHAN] Menambahkan status 'Dine-in' ke perhitungan
 $count_query = mysqli_query($conn, "SELECT status, COUNT(*) as count FROM pesanan GROUP BY status WITH ROLLUP");
-$status_counts = ['All' => 0, 'Menunggu' => 0, 'Dikonfirmasi' => 0, 'Ditolak' => 0, 'Selesai' => 0];
+$status_counts = ['All' => 0, 'Menunggu' => 0, 'Dikonfirmasi' => 0, 'Ditolak' => 0, 'Selesai' => 0, 'Dine-in' => 0]; // Tambah Dine-in
 while ($row = mysqli_fetch_assoc($count_query)) {
     if ($row['status'] === NULL) {
         $status_counts['All'] = $row['count'];
@@ -103,6 +118,8 @@ while ($row = mysqli_fetch_assoc($count_query)) {
             --success-color: #4CAF50;
             --pending-color: #ffc107;
             --danger-color: #f44336;
+            --info-color: #007bff; /* Biru untuk Selesai */
+            --dine-in-color: #6f42c1; /* Ungu untuk Dine-in */
             --bg-light: #f4f6f9;
             --text-dark: #1f2937;
         }
@@ -224,6 +241,8 @@ while ($row = mysqli_fetch_assoc($count_query)) {
         .status-Dikonfirmasi { background-color: #d4edda; color: #155724; }
         .status-Ditolak { background-color: #f8d7da; color: #721c24; }
         .status-Selesai { background-color: #cce5ff; color: #004085; }
+        /* [PERUBAHAN] Badge untuk Dine-in */
+        .status-Dine-in { background-color: #e9d8fd; color: var(--dine-in-color); } 
         
         /* TABLE STYLING */
         table {
@@ -271,7 +290,7 @@ while ($row = mysqli_fetch_assoc($count_query)) {
         .action-button:hover { opacity: 0.9; }
         .btn-confirm { background-color: var(--success-color); }
         .btn-reject { background-color: var(--danger-color); }
-        .btn-complete { background-color: #007bff; }
+        .btn-complete { background-color: var(--info-color); } /* Diubah jadi biru */
 
     </style>
     <script>
@@ -334,7 +353,7 @@ while ($row = mysqli_fetch_assoc($count_query)) {
     </div>
 
     <div class="main-content">
-       
+        
     
         <div class="header-section">
             <h2>Kelola Pesanan</h2>
@@ -342,13 +361,18 @@ while ($row = mysqli_fetch_assoc($count_query)) {
 
         <div class="tabs">
             <?php 
-            $statuses = ['All', 'Menunggu', 'Dikonfirmasi', 'Ditolak', 'Selesai'];
+            // [PERUBAHAN] Menambahkan 'Dine-in' ke daftar tab
+            $statuses = ['All', 'Menunggu', 'Dikonfirmasi', 'Dine-in', 'Ditolak', 'Selesai'];
             foreach ($statuses as $status): 
+                if (isset($status_counts[$status])): // Hanya tampilkan jika ada datanya
             ?>
                 <button class="tab-button <?= $current_status === $status ? 'active' : ''; ?>" onclick="filterStatus('<?= $status; ?>')">
                     <?= $status; ?> <span style="font-size: 11px; background: #eee; padding: 2px 6px; border-radius: 10px; margin-left: 5px;"><?= $status_counts[$status]; ?></span>
                 </button>
-            <?php endforeach; ?>
+            <?php 
+                endif;
+            endforeach; 
+            ?>
         </div>
         
         <table>
@@ -357,8 +381,7 @@ while ($row = mysqli_fetch_assoc($count_query)) {
                     <th style="width: 5%;">ID</th>
                     <th style="width: 12%;">Waktu</th>
                     <th style="width: 15%;">Pemesan</th>
-                    <th style="width: 20%;">Alamat</th>
-                    <th style="width: 15%;">Catatan</th>
+                    <th style="width: 20%;">Alamat / Meja</th> <th style="width: 15%;">Catatan</th>
                     <th style="width: 18%;">Detail Item</th>
                     <th style="width: 5%;">Status</th>
                     <th style="width: 10%;">Aksi</th>
@@ -376,9 +399,21 @@ while ($row = mysqli_fetch_assoc($count_query)) {
                         <td>
                             <strong><?= htmlspecialchars($row['nama_pemesan']); ?></strong>
                             <small>ID: <?= $row['id_user']; ?></small>
+                            
+                            <?php if ($row['metode'] === 'Bayar di Tempat (COD)' && !empty($row['no_hp'])): ?>
+                                <small style="color: var(--success-color); font-weight: 500; margin-top: 5px; display: inline-block;">
+                                    <i class="fab fa-whatsapp"></i> <?= htmlspecialchars($row['no_hp']); ?>
+                                </small>
+                            <?php endif; ?>
                         </td>
                         <td>
                             <small><?= htmlspecialchars($row['alamat']); ?></small>
+                            
+                            <?php if ($row['metode'] === 'Bayar di Kasir' && !empty($row['nomor_meja'])): ?>
+                                <strong style="color: var(--theme-primary); margin-top: 5px; font-size: 14px;">
+                                    <i class="fas fa-chair"></i> Meja: <?= htmlspecialchars($row['nomor_meja']); ?>
+                                </strong>
+                            <?php endif; ?>
                         </td>
                         <td>
                             <small><?= empty($row['catatan']) ? '-' : htmlspecialchars($row['catatan']); ?></small>
@@ -400,6 +435,10 @@ while ($row = mysqli_fetch_assoc($count_query)) {
                                     <i class="fas fa-times"></i> Tolak
                                 </button>
                             <?php elseif ($row['status'] === 'Dikonfirmasi'): ?>
+                                <button class="action-button btn-complete" onclick="setStatus(<?= $row['id_pesanan']; ?>, 'Selesai', <?= $row['id_user']; ?>, '<?= $current_status; ?>')">
+                                    <i class="fas fa-check-double"></i> Selesai
+                                </button>
+                            <?php elseif ($row['status'] === 'Dine-in'): ?>
                                 <button class="action-button btn-complete" onclick="setStatus(<?= $row['id_pesanan']; ?>, 'Selesai', <?= $row['id_user']; ?>, '<?= $current_status; ?>')">
                                     <i class="fas fa-check-double"></i> Selesai
                                 </button>

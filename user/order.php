@@ -74,10 +74,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $ongkir_final = 0; // Tidak ada ongkir untuk dine-in
         $total_final = (int)($subtotal); // Total hanya subtotal
         $metode_bayar = 'Bayar di Kasir';
-        $status_pesan = 'Dine-in'; // Status khusus untuk offline
+        $status_pesan = 'Menunggu'; // Status khusus untuk offline
 
         // [PERUBAHAN UTAMA] Menambahkan kolom 'nomor_meja' ke query INSERT
-        $kueri_insert = "INSERT INTO pesanan (id_user, id_menu, jumlah, alamat, catatan, metode, ongkir, total, status, nomor_meja)
+        $kueri_insert = "INSERT INTO pesanan (id_user, id_menu, jumlah, alamat, catatan, metode, ongkir, total, status, meja)
                          VALUES ('$id_user', '$id_menu', '$jumlah', '$alamat_dine_in', '$catatan_dine_in', '$metode_bayar', '$ongkir_final', '$total_final', '$status_pesan', '$nomor_meja')";
     }
 
