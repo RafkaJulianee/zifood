@@ -20,32 +20,18 @@ $harga_satuan = (float)($menu_data['harga'] ?? 0);
 // 2. Ambil Detail User (Nama, Alamat, No. HP tersimpan)
 $user_q = mysqli_query($conn, "SELECT nama, alamat, no_hp FROM users WHERE id_user='$id_user'");
 $user_data = mysqli_fetch_assoc($user_q);
-// Membagi nama lengkap menjadi First Name dan Last Name (hanya untuk tampilan form)
 $nama_parts = explode(' ', $user_data['nama'], 2);
 $first_name = $nama_parts[0] ?? '';
 $last_name = $nama_parts[1] ?? '';
 
-// 3. Logika Perhitungan Awal Ongkir
-// PHP hanya mengatur nilai default, perhitungan dilakukan di JavaScript
-function hitung_ongkir_php($jarak_km) {
-    if ($jarak_km <= 1) return 0;
-    if ($jarak_km == 2) return 3000;
-    if ($jarak_km == 3) return 5000;
-    if ($jarak_km == 4) return 7000;
-    if ($jarak_km <= 5) return 10000;
-    
-    return 0; // Ongkir default 0, akan disimulasikan di JS
-}
-
-$jarak_default = 0; 
-$ongkir_default = hitung_ongkir_php($jarak_default);
+// 3. Logika Perhitungan Awal
 $subtotal = $harga_satuan * $qty;
+$ongkir_default = 0; // Ongkir default 0, akan dihitung JS
 $total = $subtotal + $ongkir_default;
 
 // Logika Submit Pesanan
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     
-    // [MODIFIKASI] Ambil mode pemesanan
     $mode_pemesanan = mysqli_real_escape_string($conn, $_POST['mode_pemesanan']);
 
     if ($mode_pemesanan === 'online') {
@@ -56,37 +42,36 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $final_ongkir = (int)$_POST['ongkir_final'];
         $final_total = (int)$_POST['total_final'];
         $metode_bayar = 'Bayar di Tempat (COD)';
-        $status_pesan = 'Menunggu'; // Status untuk online
+        $status_pesan = 'Menunggu'; 
 
-        // Perbarui no_hp user jika berbeda
         if ($final_nohp != $user_data['no_hp']) {
              mysqli_query($conn, "UPDATE users SET no_hp='$final_nohp' WHERE id_user='$id_user'");
         }
-        // Alamat dan Nomor HP di-update
         mysqli_query($conn, "UPDATE users SET alamat='$final_alamat', no_hp='$final_nohp' WHERE id_user='$id_user'");
 
+        // Query INSERT untuk Online (tidak mengisi kolom 'meja')
         $query = "INSERT INTO pesanan (id_user, id_menu, jumlah, alamat, catatan, metode, ongkir, total, status)
                     VALUES ('$id_user', '$id_menu', '$qty', '$final_alamat', '$final_catatan', '$metode_bayar', '$final_ongkir', '$final_total', '$status_pesan')";
     
     } else {
         // --- LOGIKA UNTUK OFFLINE (DINE-IN) ---
-        // Kita perlu sedikit mengubah logika PHP
         $nama_pemesan_offline = mysqli_real_escape_string($conn, $_POST['nama_pemesan_offline']);
-        $nomor_meja = mysqli_real_escape_string($conn, $_POST['nomor_meja']);
+        // [DIUBAH] Ambil 'nama_meja' dari dropdown (varchar)
+        $nama_meja_terpilih = mysqli_real_escape_string($conn, $_POST['nomor_meja_dropdown']); 
         $final_nohp_offline = mysqli_real_escape_string($conn, $_POST['whatsapp_phone_offline']);
         $final_catatan_offline = mysqli_real_escape_string($conn, $_POST['catatan_offline']);
         
-        // Untuk dine-in, kita simpan info meja di kolom 'alamat' atau 'catatan'
-        $alamat_dine_in = "Dine-in: $nama_pemesan_offline (Meja $nomor_meja)";
-        $catatan_dine_in = $final_catatan_offline; // (No. HP: $final_nohp_offline)
+        $alamat_dine_in = "Dine-in: $nama_pemesan_offline"; 
+        $catatan_dine_in = $final_catatan_offline;
         
-        $final_ongkir = 0; // Tidak ada ongkir untuk dine-in
-        $final_total = (int)($subtotal); // Total hanya subtotal
+        $final_ongkir = 0; 
+        $final_total = (int)($subtotal);
         $metode_bayar = 'Bayar di Kasir';
-        $status_pesan = 'Dine-in'; // Status khusus untuk offline
+        $status_pesan = 'Dine-in';
 
-        $query = "INSERT INTO pesanan (id_user, id_menu, jumlah, alamat, catatan, metode, ongkir, total, status)
-                    VALUES ('$id_user', '$id_menu', '$qty', '$alamat_dine_in', '$catatan_dine_in', '$metode_bayar', '$final_ongkir', '$final_total', '$status_pesan')";
+        // [DIUBAH] Query INSERT untuk Offline (mengisi kolom 'meja' sesuai foto Anda)
+        $query = "INSERT INTO pesanan (id_user, id_menu, jumlah, alamat, catatan, metode, ongkir, total, status, meja)
+                    VALUES ('$id_user', '$id_menu', '$qty', '$alamat_dine_in', '$catatan_dine_in', '$metode_bayar', '$final_ongkir', '$final_total', '$status_pesan', '$nama_meja_terpilih')";
     }
 
 
@@ -133,14 +118,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             border-radius: var(--border-radius);
             box-shadow: 0 4px 20px rgba(0,0,0,0.1);
             overflow: hidden;
-            margin: 20px 0; /* Menambah margin atas/bawah */
+            margin: 20px 0;
         }
-        /* Kiri: Form */
         .form-area {
             flex: 2;
             padding: 40px;
             overflow-y: auto;
-            max-height: 90vh; /* Batasi tinggi form */
+            max-height: 90vh;
         }
         .form-area > a {
             color: var(--text-dark);
@@ -149,14 +133,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             margin-bottom: 20px;
             display: block;
         }
-        .form-area h2 {
-            font-size: 24px;
-            font-weight: 600;
-            margin-bottom: 20px;
-        }
-        .form-group {
-            margin-bottom: 30px;
-        }
+        .form-group { margin-bottom: 30px; }
         .form-group h3 {
             font-size: 18px;
             color: var(--text-dark);
@@ -168,9 +145,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             gap: 20px;
             margin-bottom: 15px;
         }
-        .input-row > div, .full-row {
-            flex: 1;
-        }
+        .input-row > div, .full-row { flex: 1; }
         input[type="text"], input[type="number"], input[type="email"], select, textarea {
             width: 100%;
             padding: 12px;
@@ -185,8 +160,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             margin-bottom: 5px;
             color: #666;
         }
-        
-        /* Opsi Delivery */
         .option-toggle {
             display: flex;
             gap: 15px;
@@ -202,12 +175,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             transition: all 0.2s;
             font-weight: 600;
             color: var(--text-dark);
-            font-size: 14px; /* Menyamakan font size */
+            font-size: 14px;
         }
         .option-toggle button.active {
             background-color: #ffece6;
             border-color: var(--primary-color);
             color: var(--primary-color);
+        }
+        .btn-cek-lokasi {
+            width: 100%;
+            padding: 12px;
+            background-color: var(--secondary-color);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 14px;
+            cursor: pointer;
+            margin-top: 5px;
+        }
+        .btn-cek-lokasi:disabled {
+            background-color: #aaa;
+            cursor: not-allowed;
         }
 
         /* Kanan: Summary */
@@ -235,11 +224,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             border-radius: 6px;
             margin-right: 15px;
         }
-        .price-details div {
-            font-size: 13px;
-            color: #666;
-            margin-top: 5px;
-        }
         .totals-row {
             display: flex;
             justify-content: space-between;
@@ -253,11 +237,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             border-top: 1px solid #ddd;
             margin-top: 10px;
         }
-        .totals-row.total span {
-            color: var(--primary-color);
-        }
-
-        /* Final Button */
+        .totals-row.total span { color: var(--primary-color); }
         .btn-checkout {
             width: 100%;
             padding: 15px;
@@ -274,71 +254,61 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <script>
         // Data PHP
         const HARGA_SATUAN = <?= $harga_satuan; ?>;
-        // Gunakan alamat terdaftar dari database
         const ALAMAT_TERDAFTAR = "<?= addslashes($user_data['alamat']); ?>";
-        const DEFAULT_JARAK_KM = 0;
+        
+        // --- LOKASI RESTORAN ---
+        // GANTI DENGAN KOORDINAT (LATITUDE, LONGITUDE) RESTORAN ANDA
+        const RESTO_LAT = -6.917464; 
+        const RESTO_LON = 107.619123;
+        // ---------------------------------
 
-        // Logika Perhitungan Ongkir di JS
+        const formatter = new Intl.NumberFormat('id-ID', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+
         function hitungOngkir(jarak) {
             jarak = parseFloat(jarak);
             if (isNaN(jarak) || jarak <= 0) return 0;
-            
             if (jarak <= 1) return 0;
             if (jarak <= 2) return 3000;
             if (jarak <= 3) return 5000;
             if (jarak <= 4) return 7000;
             if (jarak <= 5) return 10000;
-
             return -1; // Jarak melebihi 5 km
         }
 
         function updateOngkirAndTotal() {
+            if (document.getElementById('mode_pemesanan').value !== 'online') return; 
+
             const qty = 1;
             const subtotal = HARGA_SATUAN * qty;
-            
-            // Ambil Jarak input (simulasi)
             const inputJarak = document.getElementById('jarak_input').value;
             const jarak = parseFloat(inputJarak) || 0;
 
             let ongkir = hitungOngkir(jarak);
             let total = subtotal;
-            let deliveryAvailable = true;
-
-            // Format Rupiah (untuk JS)
-            const formatter = new Intl.NumberFormat('id-ID', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+            let statusText = document.getElementById('delivery_status');
 
             if (ongkir === -1) {
-                // Melebihi 5 km
-                deliveryAvailable = false;
-                document.getElementById('delivery_status').innerText = 'Jarak Melebihi Batas (5km)';
-                document.getElementById('delivery_status').style.color = 'red';
+                statusText.innerHTML = `Jarak ${jarak.toFixed(2)} km. <span style="color:red; font-weight: bold;">Melebihi Batas (5km)</span>`;
                 document.getElementById('checkout_btn_submit').disabled = true;
-                
-                // Set ongkir menjadi N/A untuk tampilan dan 0 untuk submission database
                 ongkir = 0; 
                 document.getElementById('ongkir_display').innerText = 'N/A';
             } else {
                 total = subtotal + ongkir;
-                document.getElementById('delivery_status').innerText = ongkir === 0 ? 'Gratis' : 'Rp' + formatter.format(ongkir);
-                document.getElementById('delivery_status').style.color = ongkir === 0 ? 'var(--secondary-color)' : 'var(--text-dark)';
+                let ongkirText = ongkir === 0 ? 'Gratis' : 'Rp' + formatter.format(ongkir);
+                statusText.innerHTML = `Jarak ${jarak.toFixed(2)} km. <span style="color: var(--secondary-color); font-weight: bold;">${ongkirText}</span>`;
                 document.getElementById('checkout_btn_submit').disabled = false;
-                
-                document.getElementById('ongkir_display').innerText = 'Rp' + formatter.format(ongkir);
+                document.getElementById('ongkir_display').innerText = ongkirText;
             }
             
-            // Update Summary DOM
             document.getElementById('subtotal_display').innerText = 'Rp' + formatter.format(subtotal);
-            
-            // Tampilkan total, meskipun pengiriman tidak tersedia, agar user tahu biaya item
             document.getElementById('total_display').innerText = 'Rp' + formatter.format(total);
-            
-            // Update hidden inputs untuk PHP
             document.getElementById('ongkir_final').value = ongkir;
             document.getElementById('total_final').value = total;
             document.getElementById('delivery_address_final').value = document.getElementById('alamat_delivery_input').value;
         }
 
         function toggleAddress(useRegistered) {
+            if (document.getElementById('mode_pemesanan').value !== 'online') return;
             const deliveryInput = document.getElementById('alamat_delivery_input');
             const registeredButton = document.getElementById('btn_registered');
             const newButton = document.getElementById('btn_new');
@@ -349,29 +319,129 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 registeredButton.classList.add('active');
                 newButton.classList.remove('active');
             } else {
-                deliveryInput.value = ''; // Kosongkan untuk input baru
+                deliveryInput.value = '';
                 deliveryInput.disabled = false;
                 registeredButton.classList.remove('active');
                 newButton.classList.add('active');
             }
+            document.getElementById('jarak_input').value = 0;
+            document.getElementById('delivery_status').innerHTML = 'Silakan cek lokasi Anda...';
             updateOngkirAndTotal();
         }
 
-        // --- [JAVASCRIPT BARU UNTUK LANGKAH 2] ---
-        // (Kita akan isi ini nanti)
-        // --- [AKHIR JAVASCRIPT BARU] ---
+        function toggleMode(mode) {
+            const formOnline = document.getElementById('form_online_wrapper');
+            const formOffline = document.getElementById('form_offline_wrapper');
+            const btnOnline = document.getElementById('btn_mode_online');
+            const btnOffline = document.getElementById('btn_mode_offline');
+            const paymentDisplay = document.getElementById('payment_method_display');
+            const hiddenModeInput = document.getElementById('mode_pemesanan');
+            const subtotal = HARGA_SATUAN * 1;
 
+            if (mode === 'offline') {
+                formOnline.style.display = 'none';
+                formOffline.style.display = 'block';
+                btnOnline.classList.remove('active');
+                btnOffline.classList.add('active');
+                paymentDisplay.innerHTML = '<i class="fas fa-cash-register"></i> Bayar di Kasir';
+                hiddenModeInput.value = 'offline';
+
+                document.getElementById('ongkir_display').innerText = 'Rp0';
+                document.getElementById('total_display').innerText = 'Rp' + formatter.format(subtotal);
+                document.getElementById('ongkir_final').value = 0;
+                document.getElementById('total_final').value = subtotal;
+                document.getElementById('checkout_btn_submit').disabled = false;
+                
+                // Non-aktifkan input online tapi aktifkan input offline
+                document.querySelector('input[name="whatsapp_phone"]').required = false;
+                document.querySelector('textarea[name="delivery_address_input"]').required = false;
+                document.querySelector('input[name="nama_pemesan_offline"]').required = true;
+                document.querySelector('select[name="nomor_meja_dropdown"]').required = true;
+
+
+            } else { // Mode 'online'
+                formOnline.style.display = 'block';
+                formOffline.style.display = 'none';
+                btnOnline.classList.add('active');
+                btnOffline.classList.remove('active');
+                paymentDisplay.innerHTML = '<i class="fas fa-money-bill-wave"></i> Bayar di Tempat (COD)';
+                hiddenModeInput.value = 'online';
+
+                // Aktifkan input online tapi non-aktifkan input offline
+                document.querySelector('input[name="whatsapp_phone"]').required = true;
+                document.querySelector('textarea[name="delivery_address_input"]').required = true;
+                document.querySelector('input[name="nama_pemesan_offline"]').required = false;
+                document.querySelector('select[name="nomor_meja_dropdown"]').required = false;
+
+                updateOngkirAndTotal(); 
+            }
+        }
+
+        // --- Geolocation ---
+        function getLocationAndCalculate() {
+            const statusText = document.getElementById('delivery_status');
+            const geoButton = document.getElementById('btn_cek_lokasi');
+
+            statusText.innerHTML = '<span style="color:#aaa;">Mendapatkan lokasi Anda...</span>';
+            geoButton.disabled = true;
+
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(showPosition, showError);
+            } else {
+                statusText.innerHTML = '<span style="color:red;">Geolocation tidak didukung browser ini.</span>';
+                geoButton.disabled = false;
+            }
+        }
+
+        function showPosition(position) {
+            const userLat = position.coords.latitude;
+            const userLon = position.coords.longitude;
+            const jarakKm = calculateDistance(userLat, userLon, RESTO_LAT, RESTO_LON);
+
+            document.getElementById('jarak_input').value = jarakKm.toFixed(2);
+            document.getElementById('btn_cek_lokasi').disabled = false;
+            updateOngkirAndTotal(); 
+        }
+
+        function showError(error) {
+            const statusText = document.getElementById('delivery_status');
+            document.getElementById('btn_cek_lokasi').disabled = false;
+            let msg = '<span style="color:red;">';
+            switch(error.code) {
+                case error.PERMISSION_DENIED: msg += 'Anda menolak izin lokasi.'; break;
+                case error.POSITION_UNAVAILABLE: msg += 'Informasi lokasi tidak tersedia.'; break;
+                case error.TIMEOUT: msg += 'Waktu permintaan lokasi habis.'; break;
+                default: msg += 'Terjadi kesalahan.'; break;
+            }
+            statusText.innerHTML = msg + '</span>';
+        }
+
+        function calculateDistance(lat1, lon1, lat2, lon2) {
+            const R = 6371; // Radius bumi dalam KM
+            const dLat = deg2rad(lat2 - lat1);
+            const dLon = deg2rad(lon2 - lon1);
+            const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                      Math.cos(deg2rad(lat1)) * Math.cos(deg2rad(lat2)) *
+                      Math.sin(dLon / 2) * Math.sin(dLon / 2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+            return R * c; // Jarak dalam KM
+        }
+
+        function deg2rad(deg) {
+            return deg * (Math.PI / 180);
+        }
 
         document.addEventListener('DOMContentLoaded', function() {
-            // Inisialisasi: Gunakan alamat terdaftar
             toggleAddress(true);
             
-            // Event listener untuk input jarak dan alamat baru
-            document.getElementById('jarak_input').addEventListener('input', updateOngkirAndTotal);
-            document.getElementById('alamat_delivery_input').addEventListener('input', updateOngkirAndTotal);
+            document.getElementById('alamat_delivery_input').addEventListener('input', function() {
+                document.getElementById('jarak_input').value = 0;
+                document.getElementById('delivery_status').innerHTML = 'Silakan cek lokasi Anda...';
+                updateOngkirAndTotal();
+            });
             
-            // Perbarui total saat page load
-            updateOngkirAndTotal();
+            // Inisialisasi mode
+            toggleMode('online');
         });
     </script>
 </head>
@@ -395,8 +465,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     </button>
                 </div>
             </div>
+            
             <div id="form_online_wrapper"> 
-                
                 <div class="form-group">
                     <h3>1. Contact Information</h3>
                     <div class="input-row">
@@ -423,7 +493,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                 <div class="form-group">
                     <h3>2. Delivery Details</h3>
-                    <label>Pilih Alamat Pengiriman (Maksimum 5 km dari Restoran)</label>
+                    <label>Pilih Alamat Pengiriman (Maksimum 5 km)</label>
                     <div class="option-toggle">
                         <button type="button" id="btn_registered" onclick="toggleAddress(true)"><i class="fas fa-home"></i> Alamat Terdaftar</button>
                         <button type="button" id="btn_new" onclick="toggleAddress(false)"><i class="fas fa-map-marker-alt"></i> Alamat Baru</button>
@@ -434,22 +504,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <textarea id="alamat_delivery_input" name="delivery_address_input" required></textarea>
                     </div>
 
-                    <div class="input-row" style="margin-top: 15px;">
-                        <div class="form-control">
-                            <label>SIMULASI Jarak (KM)</label>
-                            <input type="number" id="jarak_input" value="0" min="0" max="5" step="1">
+                    <div class="input-row" style="margin-top: 15px; align-items: flex-end;">
+                        <div class="form-control" style="flex: 1;">
+                            <label>Hitung Ongkos Kirim (Otomatis)</label>
+                            <button type="button" id="btn_cek_lokasi" class="btn-cek-lokasi" onclick="getLocationAndCalculate()">
+                                <i class="fas fa-map-marker-alt"></i> Cek Lokasi Saya
+                            </button>
                         </div>
-                        <div class="form-control">
+                        <div class="form-control" style="flex: 2;">
                             <label>Status Pengiriman</label>
-                            <strong id="delivery_status" style="font-size: 16px; display: block; padding: 10px 0;">Menghitung...</strong>
+                            <strong id="delivery_status" style="font-size: 14px; display: block; padding: 10px 0;">Silakan cek lokasi Anda...</strong>
                         </div>
                     </div>
-                    <div class="full-row">
+                    <input type="hidden" id="jarak_input" value="0">
+                    
+                    <div class="full-row" style="margin-top: 15px;">
                         <label>Catatan (Opsional)</label>
                         <input type="text" name="catatan" placeholder="Contoh: Jangan terlalu pedas, antar ke pintu belakang.">
                     </div>
                 </div>
             </div> 
+
             <div id="form_offline_wrapper" style="display: none;">
                 <div class="form-group">
                     <h3>1. Detail Pemesan (Dine-in)</h3>
@@ -457,15 +532,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <div class="input-row">
                         <div>
                             <label>Nama Pemesan</label>
-                            <input type="text" name="nama_pemesan_offline" id="nama_pemesan_offline" value="<?= htmlspecialchars($first_name . ' ' . $last_name); ?>">
+                            <input type="text" name="nama_pemesan_offline" id="nama_pemesan_offline" value="<?= htmlspecialchars($first_name . ' ' . $last_name); ?>" required>
                         </div>
                         <div>
                             <label>Nomor Meja</label>
-                            <select name="nomor_meja" id="nomor_meja">
-                                <?php for ($i = 1; $i <= 20; $i++): ?>
-                                    <option value="<?= $i; ?>">Meja <?= $i; ?></option>
+                            <select name="nomor_meja_dropdown" id="nomor_meja_dropdown" required>
+                                <?php 
+                                // Ganti angka 20 ini jika admin ingin mengubah jumlah meja
+                                $jumlah_meja = 20; 
+                                for ($i = 1; $i <= $jumlah_meja; $i++): 
+                                ?>
+                                    <option value="Meja <?= $i; ?>">Meja <?= $i; ?></option>
                                 <?php endfor; ?>
-                                </select>
+                            </select>
                         </div>
                     </div>
                     
@@ -481,11 +560,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                 </div>
             </div>
+
             <div class="form-group">
                 <h3>3. Payment Method</h3>
                 <label>Metode Pembayaran</label>
                 <div class="option-toggle">
-                     <button type="button" id="payment_method_display" class="active" style="flex: none; padding: 10px 20px;">
+                    <button type="button" id="payment_method_display" class="active" style="flex: none; padding: 10px 20px;">
                         <i class="fas fa-money-bill-wave"></i> Bayar di Tempat (COD)
                     </button>
                 </div>
@@ -521,7 +601,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <input type="hidden" name="total_final" id="total_final" value="<?= $total; ?>">
             <input type="hidden" name="id_menu" value="<?= $id_menu; ?>">
             <input type="hidden" name="delivery_address" id="delivery_address_final" value="<?= htmlspecialchars($user_data['alamat']); ?>">
-            
             <input type="hidden" name="mode_pemesanan" id="mode_pemesanan" value="online">
 
             <button type="submit" class="btn-checkout" id="checkout_btn_submit">
