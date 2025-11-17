@@ -14,7 +14,7 @@ $totalMenu = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) AS total FR
 // Ambil total pesanan
 $totalPesanan = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) AS total FROM pesanan"))['total'] ?? 0;
 
-// Ambil total pendapatan
+// Ambil total pendapatan (Keseluruhan)
 $pendapatan = mysqli_fetch_assoc(mysqli_query($conn, "SELECT SUM(total) AS total FROM pesanan WHERE status='Selesai'"))['total'] ?? 0;
 
 // BARU: Total Pesanan Menunggu Konfirmasi (untuk KPI Card)
@@ -28,30 +28,31 @@ $pesananBaru = mysqli_query($conn, "SELECT p.*, u.nama FROM pesanan p JOIN users
 $menuTop = mysqli_query($conn, "SELECT * FROM menu ORDER BY rating_rata DESC LIMIT 5");
 
 
-// LOGIKA UNTUK GRAFIK PENDAPATAN BULANAN (Revenue Chart)
+// 💰 LOGIKA UNTUK GRAFIK PENDAPATAN HARIAN (Revenue Chart)
+// Query diubah untuk mengelompokkan berdasarkan tanggal (hari)
 $grafikPendapatanResult = mysqli_query($conn, "
     SELECT 
-        DATE_FORMAT(tanggal, '%Y-%m') AS bulan, 
+        DATE_FORMAT(tanggal, '%Y-%m-%d') AS hari, 
         SUM(total) AS total_pendapatan 
     FROM 
         pesanan 
     WHERE 
         status='Selesai' 
     GROUP BY 
-        bulan 
+        hari 
     ORDER BY 
-        bulan ASC
+        hari ASC
 ");
 
-$dataBulan = [];
+$dataHari = []; // Variabel label diubah
 $dataPendapatan = [];
 
 while ($data = mysqli_fetch_assoc($grafikPendapatanResult)) {
-    $dataBulan[] = $data['bulan'];
+    $dataHari[] = $data['hari']; // Mengambil data per hari
     $dataPendapatan[] = (float)$data['total_pendapatan'];
 }
 
-$jsonBulan = json_encode($dataBulan);
+$jsonHari = json_encode($dataHari); // JSON untuk label harian
 $jsonPendapatan = json_encode($dataPendapatan);
 
 if (isset($_GET['logout'])) {
@@ -123,7 +124,7 @@ if (!isset($_SESSION['id_admin'])) {
             font-size: 20px;
             transition: color 0.2s, background-color 0.2s;
             border-radius: 8px;
-            text-decoration: none; /* Tambahkan ini agar link tidak bergaris bawah */
+            text-decoration: none;
         }
         .nav-link:hover, .nav-link.active {
             color: var(--theme-primary);
@@ -134,8 +135,8 @@ if (!isset($_SESSION['id_admin'])) {
         .main-content {
             flex-grow: 1;
             display: grid;
-            grid-template-columns: repeat(4, 1fr); /* 4 kolom di bagian atas */
-            grid-template-rows: auto auto 1fr; /* Header, KPI, Chart, List */
+            grid-template-columns: repeat(4, 1fr);
+            grid-template-rows: auto auto 1fr;
             gap: 20px;
         }
         .header {
@@ -164,7 +165,7 @@ if (!isset($_SESSION['id_admin'])) {
             overflow: hidden;
         }
         .kpi-card.revenue {
-            grid-column: 1 / span 2; /* Revenue card mengambil 2 kolom */
+            grid-column: 1 / span 2;
             background: linear-gradient(135deg, var(--card-orange-gradient-start), var(--card-orange-gradient-end));
             color: white;
             padding: 30px;
@@ -195,7 +196,7 @@ if (!isset($_SESSION['id_admin'])) {
         
         /* REVENUE CHART */
         .chart-card {
-            grid-column: 1 / span 4; /* Chart mengambil 4 kolom penuh di bawah KPI */
+            grid-column: 1 / span 4;
             background: white;
             padding: 30px;
             border-radius: 12px;
@@ -292,12 +293,12 @@ if (!isset($_SESSION['id_admin'])) {
             <h3>Total Menu (Visitors)</h3>
             <div class="kpi-value"><?= $totalMenu; ?></div>
             <div class="kpi-footer">
-                 <span style="color: var(--card-green); font-weight: 600;">+3.1%</span> Items in stock
+                <span style="color: var(--card-green); font-weight: 600;">+3.1%</span> Items in stock
             </div>
         </div>
         
         <div class="chart-card">
-            <h3>Revenue Chart (Pendapatan Bulanan)</h3>
+            <h3>Revenue Chart (Pendapatan Harian)</h3>
             <canvas id="pendapatanChart" style="max-height: 250px;"></canvas>
         </div>
 
@@ -325,18 +326,18 @@ if (!isset($_SESSION['id_admin'])) {
 
             <div class="sales-by-category">
                 <h3>Top Menu Items (Rating)</h3>
-                 <?php if (mysqli_num_rows($menuTop) > 0): ?>
-                    <ol style="padding-left: 20px; margin: 0;">
-                    <?php while ($m = mysqli_fetch_assoc($menuTop)): ?>
-                        <li class="top-menu-item">
-                            <span><?= htmlspecialchars($m['nama_menu']); ?></span>
-                            <span>⭐ <?= number_format($m['rating_rata'], 1); ?></span>
-                        </li>
-                    <?php endwhile; ?>
-                    </ol>
-                <?php else: ?>
-                     <p style="font-size: 12px; color: #999;">Belum ada data menu top.</p>
-                <?php endif; ?>
+                    <?php if (mysqli_num_rows($menuTop) > 0): ?>
+                        <ol style="padding-left: 20px; margin: 0;">
+                        <?php while ($m = mysqli_fetch_assoc($menuTop)): ?>
+                            <li class="top-menu-item">
+                                <span><?= htmlspecialchars($m['nama_menu']); ?></span>
+                                <span>⭐ <?= number_format($m['rating_rata'], 1); ?></span>
+                            </li>
+                        <?php endwhile; ?>
+                        </ol>
+                    <?php else: ?>
+                        <p style="font-size: 12px; color: #999;">Belum ada data menu top.</p>
+                    <?php endif; ?>
             </div>
             
         </div>
@@ -346,14 +347,15 @@ if (!isset($_SESSION['id_admin'])) {
 
 <script>
     // Data PHP di-inject langsung ke JavaScript
-    const labelBulan = <?= $jsonBulan; ?>;
+    // 💡 Menggunakan labelHari yang berisi data tanggal ('YYYY-MM-DD')
+    const labelHari = <?= $jsonHari; ?>; 
     const dataTotalPendapatan = <?= $jsonPendapatan; ?>;
 
     const ctx = document.getElementById('pendapatanChart').getContext('2d');
     const pendapatanChart = new Chart(ctx, {
-        type: 'bar', // Menggunakan bar chart sesuai konsep
+        type: 'bar',
         data: {
-            labels: labelBulan,
+            labels: labelHari, // Menggunakan label Hari
             datasets: [{
                 label: 'Pendapatan (Rp)',
                 data: dataTotalPendapatan,
@@ -375,7 +377,7 @@ if (!isset($_SESSION['id_admin'])) {
                 },
                 x: {
                     grid: { display: false },
-                    title: { display: true, text: 'Bulan' }
+                    title: { display: true, text: 'Hari' } // Title diubah menjadi Hari
                 }
             },
             plugins: {
