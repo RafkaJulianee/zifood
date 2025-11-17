@@ -29,7 +29,6 @@ $menuTop = mysqli_query($conn, "SELECT * FROM menu ORDER BY rating_rata DESC LIM
 
 
 // 💰 LOGIKA UNTUK GRAFIK PENDAPATAN HARIAN (Revenue Chart)
-// Query diubah untuk mengelompokkan berdasarkan tanggal (hari)
 $grafikPendapatanResult = mysqli_query($conn, "
     SELECT 
         DATE_FORMAT(tanggal, '%Y-%m-%d') AS hari, 
@@ -44,26 +43,19 @@ $grafikPendapatanResult = mysqli_query($conn, "
         hari ASC
 ");
 
-$dataHari = []; // Variabel label diubah
+$dataHari = [];
 $dataPendapatan = [];
 
 while ($data = mysqli_fetch_assoc($grafikPendapatanResult)) {
-    $dataHari[] = $data['hari']; // Mengambil data per hari
+    $dataHari[] = $data['hari'];
     $dataPendapatan[] = (float)$data['total_pendapatan'];
 }
 
-$jsonHari = json_encode($dataHari); // JSON untuk label harian
+$jsonHari = json_encode($dataHari);
 $jsonPendapatan = json_encode($dataPendapatan);
 
 if (isset($_GET['logout'])) {
-    session_destroy(); // Hapus semua sesi
-    header("Location: login.php"); // Lempar kembali ke login
-    exit;
-}
-// -----------------------------------------
-
-// Cek apakah admin sudah login (Kode lama kamu)
-if (!isset($_SESSION['id_admin'])) {
+    session_destroy(); 
     header("Location: login.php");
     exit;
 }
@@ -79,14 +71,17 @@ if (!isset($_SESSION['id_admin'])) {
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     
+    <script src="https://cdn.jsdelivr.net/npm/date-fns@2/index.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@2/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+    
     <style>
         :root {
-            --theme-primary: #FF5722; /* Merah-Oranye */
-            --theme-primary-dark: #e04e1f; /* Sedikit lebih gelap */
+            --theme-primary: #FF5722;
+            --theme-primary-dark: #e04e1f;
             --bg-light: #f4f6f9;
             --text-dark: #1f2937;
-            --card-orange-gradient-start: #FF5722; /* Oranye utama */
-            --card-orange-gradient-end: #ffa07a; /* Oranye lebih terang */
+            --card-orange-gradient-start: #FF5722;
+            --card-orange-gradient-end: #ffa07a;
             --card-red: #ef4444;
             --card-green: #10b981;
         }
@@ -98,14 +93,7 @@ if (!isset($_SESSION['id_admin'])) {
             color: var(--text-dark);
         }
 
-        .dashboard-wrapper {
-            padding: 20px;
-            display: flex;
-            gap: 20px;
-            min-height: 100vh;
-        }
-
-        /* 1. SIDEBAR KIRI (NAVBAR ICON) */
+        .dashboard-wrapper { padding: 20px; display: flex; gap: 20px; min-height: 100vh; }
         .sidebar {
             width: 70px;
             background-color: white;
@@ -118,132 +106,67 @@ if (!isset($_SESSION['id_admin'])) {
             align-items: center;
         }
         .nav-link {
-            padding: 10px;
-            margin: 5px 0;
-            color: #9ca3af;
-            font-size: 20px;
+            padding: 10px; margin: 5px 0; color: #9ca3af; font-size: 20px;
             transition: color 0.2s, background-color 0.2s;
-            border-radius: 8px;
-            text-decoration: none;
+            border-radius: 8px; text-decoration: none;
         }
-        .nav-link:hover, .nav-link.active {
-            color: var(--theme-primary);
-            background-color: #fcebeb;
-        }
-
-        /* 2. KONTEN UTAMA (GRID) */
+        .nav-link:hover, .nav-link.active { color: var(--theme-primary); background-color: #fcebeb; }
         .main-content {
-            flex-grow: 1;
-            display: grid;
+            flex-grow: 1; display: grid;
             grid-template-columns: repeat(4, 1fr);
             grid-template-rows: auto auto 1fr;
             gap: 20px;
         }
         .header {
-            grid-column: 1 / -1;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding-bottom: 10px;
+            grid-column: 1 / -1; display: flex; justify-content: space-between;
+            align-items: center; padding-bottom: 10px;
         }
-        .header h1 {
-            font-size: 24px;
-            font-weight: 600;
-        }
-        .user-greeting {
-            color: #4b5563;
-        }
-
-        /* KPI CARDS (Total Revenue, Total Orders, etc.) */
+        .header h1 { font-size: 24px; font-weight: 600; }
+        .user-greeting { color: #4b5563; }
         .kpi-card {
-            background: white;
-            padding: 20px;
-            border-radius: 12px;
+            background: white; padding: 20px; border-radius: 12px;
             box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-            transition: transform 0.2s;
-            position: relative;
-            overflow: hidden;
+            position: relative; overflow: hidden;
         }
         .kpi-card.revenue {
             grid-column: 1 / span 2;
             background: linear-gradient(135deg, var(--card-orange-gradient-start), var(--card-orange-gradient-end));
-            color: white;
-            padding: 30px;
+            color: white; padding: 30px;
         }
-        .kpi-card h3 {
-            font-size: 14px;
-            font-weight: 500;
-            margin: 0 0 10px;
-            opacity: 0.8;
-        }
-        .kpi-value {
-            font-size: 32px;
-            font-weight: 700;
-            margin-bottom: 10px;
-        }
-        .kpi-footer {
-            font-size: 12px;
-            opacity: 0.9;
-        }
+        .kpi-card h3 { font-size: 14px; font-weight: 500; margin: 0 0 10px; opacity: 0.8; }
+        .kpi-value { font-size: 32px; font-weight: 700; margin-bottom: 10px; }
+        .kpi-footer { font-size: 12px; opacity: 0.9; }
         .kpi-card .trend {
-            font-size: 14px;
-            font-weight: 600;
-            color: var(--card-green);
+            font-size: 14px; font-weight: 600; color: var(--card-green);
             background: rgba(255, 255, 255, 0.2);
-            padding: 2px 8px;
-            border-radius: 4px;
+            padding: 2px 8px; border-radius: 4px;
         }
-        
-        /* REVENUE CHART */
         .chart-card {
-            grid-column: 1 / span 4;
-            background: white;
-            padding: 30px;
-            border-radius: 12px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            grid-column: 1 / span 4; background: white; padding: 30px;
+            border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.05);
         }
-        
-        /* RECENT ORDERS & SALES BY CATEGORY */
         .list-card {
-            grid-column: 1 / span 4;
-            display: flex;
-            gap: 20px;
-            margin-top: 10px;
+            grid-column: 1 / span 4; display: flex;
+            gap: 20px; margin-top: 10px;
         }
         .recent-orders, .sales-by-category {
-            flex: 1;
-            background: white;
-            padding: 20px;
-            border-radius: 12px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            flex: 1; background: white; padding: 20px;
+            border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.05);
         }
         .list-card h3 {
-            font-size: 18px;
-            font-weight: 600;
-            margin-top: 0;
-            border-bottom: 1px solid #eee;
-            padding-bottom: 10px;
-            margin-bottom: 15px;
+            font-size: 18px; font-weight: 600; margin-top: 0;
+            border-bottom: 1px solid #eee; padding-bottom: 10px; margin-bottom: 15px;
         }
         .order-item {
-            padding: 10px 0;
-            border-bottom: 1px dashed #eee;
-            display: flex;
-            justify-content: space-between;
-            font-size: 14px;
+            padding: 10px 0; border-bottom: 1px dashed #eee;
+            display: flex; justify-content: space-between; font-size: 14px;
         }
         .top-menu-item {
-            padding: 8px 0;
-            display: flex;
-            justify-content: space-between;
-            font-size: 14px;
-            border-bottom: 1px solid #f0f0f0;
+            padding: 8px 0; display: flex; justify-content: space-between;
+            font-size: 14px; border-bottom: 1px solid #f0f0f0;
         }
         .top-menu-item:last-child { border-bottom: none; }
-        .top-menu-item span {
-            color: var(--theme-primary);
-            font-weight: 600;
-        }
+        .top-menu-item span { color: var(--theme-primary); font-weight: 600; }
     </style>
 
     <script>
@@ -259,9 +182,7 @@ if (!isset($_SESSION['id_admin'])) {
     <div class="sidebar">
         <a href="dashboard.admin.php" class="nav-link active" title="Dashboard"><i class="fas fa-chart-line"></i></a>
         <a href="menu.php" class="nav-link" title="Kelola Menu"><i class="fas fa-utensils"></i></a>
-        
         <a href="tambah.php" class="nav-link" title="Tambah Menu"><i class="fas fa-plus"></i></a>
-        
         <a href="pesanan.php" class="nav-link" title="Kelola Pesanan"><i class="fas fa-receipt"></i></a>
         <a href="dashboard.admin.php?logout=true" class="nav-link" onclick="return logoutConfirm()" title="Logout"><i class="fas fa-sign-out-alt"></i></a>
     </div>
@@ -347,23 +268,26 @@ if (!isset($_SESSION['id_admin'])) {
 
 <script>
     // Data PHP di-inject langsung ke JavaScript
-    // 💡 Menggunakan labelHari yang berisi data tanggal ('YYYY-MM-DD')
     const labelHari = <?= $jsonHari; ?>; 
     const dataTotalPendapatan = <?= $jsonPendapatan; ?>;
 
     const ctx = document.getElementById('pendapatanChart').getContext('2d');
     const pendapatanChart = new Chart(ctx, {
-        type: 'bar',
+        
+        // 💡 DIKEMBALIKAN: Menjadi 'bar'
+        type: 'bar', 
+        
         data: {
-            labels: labelHari, // Menggunakan label Hari
+            labels: labelHari,
             datasets: [{
                 label: 'Pendapatan (Rp)',
                 data: dataTotalPendapatan,
-                backgroundColor: 'rgba(255, 87, 34, 0.8)', 
+                // Mengembalikan style bar chart
+                backgroundColor: 'rgba(255, 87, 34, 0.8)',
                 borderColor: 'rgba(255, 87, 34, 1)',
                 borderWidth: 1,
                 borderRadius: 5,
-                barThickness: 15
+                barThickness: 15 // Mengatur ketebalan bar
             }]
         },
         options: {
@@ -375,14 +299,25 @@ if (!isset($_SESSION['id_admin'])) {
                     grid: { display: false },
                     title: { display: true, text: 'Rupiah (Rp)' }
                 },
-                x: {
+                
+                // 💡 PENTING: Sumbu X tetap 'time'
+                // Ini yang memperbaiki masalah jarak
+                x: { 
+                    type: 'time', 
+                    time: {
+                        unit: 'day',
+                        tooltipFormat: 'dd MMM yyyy'
+                    },
                     grid: { display: false },
-                    title: { display: true, text: 'Hari' } // Title diubah menjadi Hari
+                    title: { display: true, text: 'Hari' } 
                 }
             },
             plugins: {
                 legend: { display: false },
-                tooltip: { mode: 'index', intersect: false }
+                tooltip: { 
+                    mode: 'index', 
+                    intersect: false 
+                }
             }
         }
     });
