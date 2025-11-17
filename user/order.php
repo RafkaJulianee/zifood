@@ -276,6 +276,177 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             margin-top: 20px;
         }
     </style>
+
+</head>
+<body>
+
+<form method="POST" action="">
+    <div class="bungkus-checkout">
+        
+        <div class="area-formulir">
+            <a href="dashboard.php" style="color: var(--teks-gelap); text-decoration: none; font-weight: 500;"><i class="fas fa-arrow-left"></i> Checkout</a>
+            <hr>
+
+            <div class="grup-formulir">
+                <h3>Mode Pemesanan</h3>
+                <div class="ganti-opsi">
+                    <button type="button" id="tombol_mode_online" class="active" onclick="gantiModePemesanan('online')">
+                        <i class="fas fa-motorcycle"></i> Online (Delivery)
+                    </button>
+                    <button type="button" id="tombol_mode_offline" onclick="gantiModePemesanan('offline')">
+                        <i class="fas fa-store-alt"></i> Offline (Dine-in)
+                    </button>
+                </div>
+            </div>
+            
+            <div id="bungkus_formulir_online"> 
+                
+                <div class="grup-formulir">
+                    <h3>1. Informasi Kontak</h3>
+                    <div class="baris-input">
+                        <div>
+                            <label>Nama Depan</label>
+                            <input type="text" value="<?= htmlspecialchars($nama_depan); ?>" disabled>
+                        </div>
+                        <div>
+                            <label>Nama Belakang</label>
+                            <input type="text" value="<?= htmlspecialchars($nama_belakang); ?>" disabled>
+                        </div>
+                    </div>
+                    <div class="baris-input">
+                        <div>
+                            <label>No. WhatsApp</label>
+                            <input type="text" name="telepon_whatsapp" value="<?= htmlspecialchars($data_user['no_hp']); ?>" placeholder="Contoh: 0812xxxx" required>
+                        </div>
+                        <div>
+                            <label>E-mail (Nonaktif)</label>
+                            <input type="email" value="Email tidak digunakan" disabled>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="grup-formulir">
+                    <h3>2. Detail Pengiriman</h3>
+                    <label>Pilih Alamat Pengiriman (Maksimum 5 km)</label>
+                    <div class="ganti-opsi">
+                        <button type="button" id="tombol_alamat_terdaftar" onclick="gantiAlamat(true)"><i class="fas fa-home"></i> Alamat Terdaftar</button>
+                        <button type="button" id="tombol_alamat_baru" onclick="gantiAlamat(false)"><i class="fas fa-map-marker-alt"></i> Alamat Baru</button>
+                    </div>
+                    
+                    <div class="baris-penuh" style="margin-top: 15px;">
+                        <label>Alamat Lengkap</label>
+                        <textarea id="input_alamat_delivery" name="input_alamat_delivery" required></textarea>
+                    </div>
+
+                    <div class="baris-input" style="margin-top: 15px; align-items: flex-end;">
+                        <div class="form-control" style="flex: 1;">
+                            <label>Hitung Ongkos Kirim (Otomatis)</label>
+                            <button type="button" id="tombol_cek_lokasi" class="tombol-cek-lokasi" onclick="dapatkanLokasiDanHitung()">
+                                <i class="fas fa-map-marker-alt"></i> Cek Lokasi Saya
+                            </button>
+                        </div>
+                        <div class="form-control" style="flex: 2;">
+                            <label>Status Pengiriman</label>
+                            <strong id="status_pengiriman" style="font-size: 14px; display: block; padding: 10px 0;">Silakan cek lokasi Anda...</strong>
+                        </div>
+                    </div>
+                    <input type="hidden" id="input_jarak" value="0">
+                    
+                    <div class="baris-penuh" style="margin-top: 15px;">
+                        <label>Catatan (Opsional)</label>
+                        <input type="text" name="catatan" placeholder="Contoh: Jangan terlalu pedas, antar ke pintu belakang.">
+                    </div>
+                </div>
+            </div> 
+            
+            <div id="bungkus_formulir_offline" style="display: none;">
+                <div class="grup-formulir">
+                    <h3>1. Detail Pemesan (Dine-in)</h3>
+                    
+                    <div class="baris-input">
+                        <div>
+                            <label>Nama Pemesan</label>
+                            <input type="text" name="nama_pemesan_offline" id="nama_pemesan_offline" value="<?= htmlspecialchars($nama_depan . ' ' . $nama_belakang); ?>">
+                        </div>
+                        <div>
+                            <label>Nomor Meja</label>
+                            <select name="nomor_meja" id="nomor_meja">
+                                <?php 
+                                $jumlah_meja = 20; 
+                                for ($i = 1; $i <= $jumlah_meja; $i++): 
+                                ?>
+                                    <option value="<?= $i; ?>">Meja <?= $i; ?></option>
+                                <?php endfor; ?>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="baris-penuh" style="margin-top: 15px;">
+                        <label>No. WhatsApp (Opsional untuk Dine-in)</label>
+                        <input type="text" name="telepon_whatsapp_offline" value="<?= htmlspecialchars($data_user['no_hp']); ?>">
+                    </div>
+
+                    <div class="baris-penuh" style="margin-top: 15px;">
+                        <label>Catatan (Opsional)</label>
+                        <input type="text" name="catatan_offline" placeholder="Contoh: Jangan terlalu pedas">
+                    </div>
+
+                </div>
+            </div>
+            
+            <div class="grup-formulir">
+                <h3>3. Metode Pembayaran</h3>
+                <label>Metode Pembayaran</label>
+                <div class="ganti-opsi">
+                    <button type="button" id="tampilan_metode_bayar" class="active" style="flex: none; padding: 10px 20px;">
+                        <i class="fas fa-money-bill-wave"></i> Bayar di Tempat (COD)
+                    </button>
+                </div>
+            </div>
+            
+        </div>
+
+        <div class="area-ringkasan">
+            <h2>Ringkasan Pesanan</h2>
+            
+            <div class="item-pesanan">
+                <img src="../assets/img/<?= htmlspecialchars($data_menu['foto'] ?? 'default.jpg'); ?>" alt="<?= htmlspecialchars($data_menu['nama_menu']); ?>" class="gambar-item">
+                <div>
+                    <strong><?= htmlspecialchars($data_menu['nama_menu']); ?></strong>
+                    <div style="color: var(--warna-primer);">Rp<?= number_format($harga_satuan, 0, ',', '.'); ?> x <?= $jumlah; ?></div>
+                </div>
+            </div>
+            
+            <div class="baris-total">
+                <span>Subtotal</span>
+                <span id="tampilan_subtotal">Rp<?= number_format($subtotal, 0, ',', '.'); ?></span>
+            </div>
+            <div class="baris-total">
+                <span>Ongkos Kirim</span>
+                <span id="tampilan_ongkir">Rp<?= number_format($ongkir_awal, 0, ',', '.'); ?></span>
+            </div>
+            <div class="baris-total total">
+                <span>TOTAL</span>
+                <span id="tampilan_total">Rp<?= number_format($total, 0, ',', '.'); ?></span>
+            </div>
+            
+            <input type="hidden" name="ongkir_final" id="input_ongkir_final" value="<?= $ongkir_awal; ?>">
+            <input type="hidden" name="total_final" id="input_total_final" value="<?= $total; ?>">
+            <input type="hidden" name="id_menu" value="<?= $id_menu; ?>">
+            <input type="hidden" name="alamat_delivery_final" id="input_alamat_final" value="<?= htmlspecialchars($data_user['alamat']); ?>">
+            <input type="hidden" name="mode_pemesanan" id="mode_pemesanan" value="online">
+
+            <button type="submit" class="tombol-checkout" id="tombol_submit_checkout">
+                Checkout & Pesan
+            </button>
+
+            <p style="text-align: center; font-size: 11px; margin-top: 15px; color: #666;">
+                Dengan menekan tombol Checkout, Anda menyetujui syarat dan ketentuan yang berlaku.
+            </p>
+        </div>
+        
+    </div>
+</form>
     <script>
         // [PERUBAHAN] Mengganti nama variabel JS ke Bahasa Indonesia
         // Data PHP
@@ -452,10 +623,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             perbaruiOngkirDanTotal(); 
         }
 
-        // [PERUBAHAN] Mengganti nama fungsi dan ID
         function tampilkanError(error) {
-            const teksStatus = document.getElementById('status_pengiriman'); // [PERUBAHAN] ID
-            const tombolGeo = document.getElementById('tombol_cek_lokasi'); // [PERUBAHAN] ID
+            const teksStatus = document.getElementById('status_pengiriman');
+            const tombolGeo = document.getElementById('tombol_cek_lokasi'); 
             tombolGeo.disabled = false;
 
             switch(error.code) {
@@ -474,8 +644,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
         }
 
-        // Rumus Haversine untuk Hitung Jarak
-        // [PERUBAHAN] Mengganti nama fungsi
+        //  untuk Hitung Jarak
+    
         function hitungJarak(lat1, lon1, lat2, lon2) {
             const R = 6371; // Radius bumi dalam KM
             const dLat = deg2rad(lat2 - lat1);
@@ -509,176 +679,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             perbaruiOngkirDanTotal(); // [PERUBAHAN] Nama fungsi
         });
     </script>
-</head>
-<body>
-
-<form method="POST" action="">
-    <div class="bungkus-checkout">
-        
-        <div class="area-formulir">
-            <a href="dashboard.php" style="color: var(--teks-gelap); text-decoration: none; font-weight: 500;"><i class="fas fa-arrow-left"></i> Checkout</a>
-            <hr>
-
-            <div class="grup-formulir">
-                <h3>Mode Pemesanan</h3>
-                <div class="ganti-opsi">
-                    <button type="button" id="tombol_mode_online" class="active" onclick="gantiModePemesanan('online')">
-                        <i class="fas fa-motorcycle"></i> Online (Delivery)
-                    </button>
-                    <button type="button" id="tombol_mode_offline" onclick="gantiModePemesanan('offline')">
-                        <i class="fas fa-store-alt"></i> Offline (Dine-in)
-                    </button>
-                </div>
-            </div>
-            
-            <div id="bungkus_formulir_online"> 
-                
-                <div class="grup-formulir">
-                    <h3>1. Informasi Kontak</h3>
-                    <div class="baris-input">
-                        <div>
-                            <label>Nama Depan</label>
-                            <input type="text" value="<?= htmlspecialchars($nama_depan); ?>" disabled>
-                        </div>
-                        <div>
-                            <label>Nama Belakang</label>
-                            <input type="text" value="<?= htmlspecialchars($nama_belakang); ?>" disabled>
-                        </div>
-                    </div>
-                    <div class="baris-input">
-                        <div>
-                            <label>No. WhatsApp</label>
-                            <input type="text" name="telepon_whatsapp" value="<?= htmlspecialchars($data_user['no_hp']); ?>" placeholder="Contoh: 0812xxxx" required>
-                        </div>
-                        <div>
-                            <label>E-mail (Nonaktif)</label>
-                            <input type="email" value="Email tidak digunakan" disabled>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="grup-formulir">
-                    <h3>2. Detail Pengiriman</h3>
-                    <label>Pilih Alamat Pengiriman (Maksimum 5 km)</label>
-                    <div class="ganti-opsi">
-                        <button type="button" id="tombol_alamat_terdaftar" onclick="gantiAlamat(true)"><i class="fas fa-home"></i> Alamat Terdaftar</button>
-                        <button type="button" id="tombol_alamat_baru" onclick="gantiAlamat(false)"><i class="fas fa-map-marker-alt"></i> Alamat Baru</button>
-                    </div>
-                    
-                    <div class="baris-penuh" style="margin-top: 15px;">
-                        <label>Alamat Lengkap</label>
-                        <textarea id="input_alamat_delivery" name="input_alamat_delivery" required></textarea>
-                    </div>
-
-                    <div class="baris-input" style="margin-top: 15px; align-items: flex-end;">
-                        <div class="form-control" style="flex: 1;">
-                            <label>Hitung Ongkos Kirim (Otomatis)</label>
-                            <button type="button" id="tombol_cek_lokasi" class="tombol-cek-lokasi" onclick="dapatkanLokasiDanHitung()">
-                                <i class="fas fa-map-marker-alt"></i> Cek Lokasi Saya
-                            </button>
-                        </div>
-                        <div class="form-control" style="flex: 2;">
-                            <label>Status Pengiriman</label>
-                            <strong id="status_pengiriman" style="font-size: 14px; display: block; padding: 10px 0;">Silakan cek lokasi Anda...</strong>
-                        </div>
-                    </div>
-                    <input type="hidden" id="input_jarak" value="0">
-                    
-                    <div class="baris-penuh" style="margin-top: 15px;">
-                        <label>Catatan (Opsional)</label>
-                        <input type="text" name="catatan" placeholder="Contoh: Jangan terlalu pedas, antar ke pintu belakang.">
-                    </div>
-                </div>
-            </div> 
-            
-            <div id="bungkus_formulir_offline" style="display: none;">
-                <div class="grup-formulir">
-                    <h3>1. Detail Pemesan (Dine-in)</h3>
-                    
-                    <div class="baris-input">
-                        <div>
-                            <label>Nama Pemesan</label>
-                            <input type="text" name="nama_pemesan_offline" id="nama_pemesan_offline" value="<?= htmlspecialchars($nama_depan . ' ' . $nama_belakang); ?>">
-                        </div>
-                        <div>
-                            <label>Nomor Meja</label>
-                            <select name="nomor_meja" id="nomor_meja">
-                                <?php 
-                                $jumlah_meja = 20; 
-                                for ($i = 1; $i <= $jumlah_meja; $i++): 
-                                ?>
-                                    <option value="<?= $i; ?>">Meja <?= $i; ?></option>
-                                <?php endfor; ?>
-                            </select>
-                        </div>
-                    </div>
-                    
-                    <div class="baris-penuh" style="margin-top: 15px;">
-                        <label>No. WhatsApp (Opsional untuk Dine-in)</label>
-                        <input type="text" name="telepon_whatsapp_offline" value="<?= htmlspecialchars($data_user['no_hp']); ?>">
-                    </div>
-
-                    <div class="baris-penuh" style="margin-top: 15px;">
-                        <label>Catatan (Opsional)</label>
-                        <input type="text" name="catatan_offline" placeholder="Contoh: Jangan terlalu pedas">
-                    </div>
-
-                </div>
-            </div>
-            
-            <div class="grup-formulir">
-                <h3>3. Metode Pembayaran</h3>
-                <label>Metode Pembayaran</label>
-                <div class="ganti-opsi">
-                    <button type="button" id="tampilan_metode_bayar" class="active" style="flex: none; padding: 10px 20px;">
-                        <i class="fas fa-money-bill-wave"></i> Bayar di Tempat (COD)
-                    </button>
-                </div>
-            </div>
-            
-        </div>
-
-        <div class="area-ringkasan">
-            <h2>Ringkasan Pesanan</h2>
-            
-            <div class="item-pesanan">
-                <img src="../assets/img/<?= htmlspecialchars($data_menu['foto'] ?? 'default.jpg'); ?>" alt="<?= htmlspecialchars($data_menu['nama_menu']); ?>" class="gambar-item">
-                <div>
-                    <strong><?= htmlspecialchars($data_menu['nama_menu']); ?></strong>
-                    <div style="color: var(--warna-primer);">Rp<?= number_format($harga_satuan, 0, ',', '.'); ?> x <?= $jumlah; ?></div>
-                </div>
-            </div>
-            
-            <div class="baris-total">
-                <span>Subtotal</span>
-                <span id="tampilan_subtotal">Rp<?= number_format($subtotal, 0, ',', '.'); ?></span>
-            </div>
-            <div class="baris-total">
-                <span>Ongkos Kirim</span>
-                <span id="tampilan_ongkir">Rp<?= number_format($ongkir_awal, 0, ',', '.'); ?></span>
-            </div>
-            <div class="baris-total total">
-                <span>TOTAL</span>
-                <span id="tampilan_total">Rp<?= number_format($total, 0, ',', '.'); ?></span>
-            </div>
-            
-            <input type="hidden" name="ongkir_final" id="input_ongkir_final" value="<?= $ongkir_awal; ?>">
-            <input type="hidden" name="total_final" id="input_total_final" value="<?= $total; ?>">
-            <input type="hidden" name="id_menu" value="<?= $id_menu; ?>">
-            <input type="hidden" name="alamat_delivery_final" id="input_alamat_final" value="<?= htmlspecialchars($data_user['alamat']); ?>">
-            <input type="hidden" name="mode_pemesanan" id="mode_pemesanan" value="online">
-
-            <button type="submit" class="tombol-checkout" id="tombol_submit_checkout">
-                Checkout & Pesan
-            </button>
-
-            <p style="text-align: center; font-size: 11px; margin-top: 15px; color: #666;">
-                Dengan menekan tombol Checkout, Anda menyetujui syarat dan ketentuan yang berlaku.
-            </p>
-        </div>
-        
-    </div>
-</form>
 
 </body>
 </html>
