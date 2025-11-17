@@ -318,10 +318,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             <label>No. WhatsApp</label>
                             <input type="text" name="telepon_whatsapp" value="<?= htmlspecialchars($data_user['no_hp']); ?>" placeholder="Contoh: 0812xxxx" required>
                         </div>
-                        <div>
-                            <label>E-mail (Nonaktif)</label>
-                            <input type="email" value="Email tidak digunakan" disabled>
-                        </div>
+                       
                     </div>
                 </div>
 
