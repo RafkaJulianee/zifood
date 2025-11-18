@@ -8,6 +8,7 @@ if (!isset($_SESSION['id_admin'])) {
     exit;
 }
 
+// ... (PHP logic remains the same) ...
 // Ambil data total menu
 $totalMenu = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) AS total FROM menu"))['total'];
 
@@ -17,18 +18,18 @@ $totalPesanan = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) AS total
 // Ambil total pendapatan (Keseluruhan)
 $pendapatan = mysqli_fetch_assoc(mysqli_query($conn, "SELECT SUM(total) AS total FROM pesanan WHERE status='Selesai'"))['total'] ?? 0;
 
-// BARU: Total Pesanan Menunggu Konfirmasi (untuk KPI Card)
+// Total Pesanan Menunggu Konfirmasi
 $waiting_orders_query = mysqli_query($conn, "SELECT COUNT(*) AS total FROM pesanan WHERE status='Menunggu'");
 $totalMenunggu = mysqli_fetch_assoc($waiting_orders_query)['total'] ?? 0;
 
-// Ambil 5 pesanan terbaru (untuk list di bawah)
+// Ambil 5 pesanan terbaru
 $pesananBaru = mysqli_query($conn, "SELECT p.*, u.nama FROM pesanan p JOIN users u ON p.id_user = u.id_user ORDER BY p.id_pesanan DESC LIMIT 5");
 
-// Ambil menu dengan rating tertinggi (digunakan sebagai Sales by Category)
+// Ambil menu dengan rating tertinggi
 $menuTop = mysqli_query($conn, "SELECT * FROM menu ORDER BY rating_rata DESC LIMIT 5");
 
 
-// 💰 LOGIKA UNTUK GRAFIK PENDAPATAN HARIAN (Revenue Chart)
+// 💰 LOGIKA GRAFIK PENDAPATAN
 $grafikPendapatanResult = mysqli_query($conn, "
     SELECT 
         DATE_FORMAT(tanggal, '%Y-%m-%d') AS hari, 
@@ -71,6 +72,7 @@ if (isset($_GET['logout'])) {
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     
+    <!-- Adapter Date-Fns untuk skala waktu -->
     <script src="https://cdn.jsdelivr.net/npm/date-fns@2/index.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@2/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
     
@@ -267,27 +269,27 @@ if (isset($_GET['logout'])) {
 </div>
 
 <script>
-    // Data PHP di-inject langsung ke JavaScript
     const labelHari = <?= $jsonHari; ?>; 
     const dataTotalPendapatan = <?= $jsonPendapatan; ?>;
 
     const ctx = document.getElementById('pendapatanChart').getContext('2d');
     const pendapatanChart = new Chart(ctx, {
-        
-        // 💡 DIKEMBALIKAN: Menjadi 'bar'
         type: 'bar', 
-        
         data: {
             labels: labelHari,
             datasets: [{
                 label: 'Pendapatan (Rp)',
                 data: dataTotalPendapatan,
-                // Mengembalikan style bar chart
-                backgroundColor: 'rgba(255, 87, 34, 0.8)',
+                backgroundColor: 'rgba(255, 87, 34, 0.7)',
                 borderColor: 'rgba(255, 87, 34, 1)',
                 borderWidth: 1,
                 borderRadius: 5,
-                barThickness: 15 // Mengatur ketebalan bar
+                // [PERUBAHAN PENTING] 
+                // 1. Menghilangkan garis grid (bukan tambahin garis)
+                // 2. Memperbesar barPercentage menjadi 0.9 agar batang lebih lebar dan jarak antar batang (oren) jadi DEKAT.
+                // 3. Menambah categoryPercentage menjadi 0.9 agar mengurangi padding di sisi kiri/kanan grup.
+                barPercentage: 0.9, 
+                categoryPercentage: 0.9,
             }]
         },
         options: {
@@ -296,18 +298,17 @@ if (isset($_GET['logout'])) {
             scales: {
                 y: {
                     beginAtZero: true,
-                    grid: { display: false },
+                    grid: { display: false }, // Menghapus grid tambahan
                     title: { display: true, text: 'Rupiah (Rp)' }
                 },
-                
-                // 💡 PENTING: Sumbu X tetap 'time'
-                // Ini yang memperbaiki masalah jarak
                 x: { 
-                    type: 'time', 
+                    type: 'time',
                     time: {
                         unit: 'day',
-                        tooltipFormat: 'dd MMM yyyy'
+                        tooltipFormat: 'dd MMM yyyy',
+                        displayFormats: { day: 'dd MMM' }
                     },
+                    offset: true,
                     grid: { display: false },
                     title: { display: true, text: 'Hari' } 
                 }
@@ -323,10 +324,5 @@ if (isset($_GET['logout'])) {
     });
 </script>
 
-<script>
-    function logoutConfirm() {
-        return confirm("Yakin mau logout dari akun admin?");
-    }
-</script>
 </body>
 </html>
