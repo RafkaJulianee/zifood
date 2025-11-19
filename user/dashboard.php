@@ -496,7 +496,7 @@ $popular = mysqli_query($conn, $popular_query);
 
     <div class="right-sidebar">
         <div class="popular-section">
-            <h3>Menu Paling Laris 🔥</h3>
+            <h3>Menu Paling Laris </h3>
             <?php if (mysqli_num_rows($popular) > 0): ?>
                 <ul class="popular-list">
                     <?php while ($pop = mysqli_fetch_assoc($popular)): ?>
@@ -514,7 +514,7 @@ $popular = mysqli_query($conn, $popular_query);
                 <p>Belum ada data menu populer (terjual).</p>
             <?php endif; ?>
             
-            <button class="add-btn" style="width: 100%; margin-top: 20px;" onclick="window.location.href='dashboard.php'">Lihat Semua Menu</button>
+           
         </div>
     </div>
 
