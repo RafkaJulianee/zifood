@@ -426,7 +426,7 @@ $popular = mysqli_query($conn, $popular_query);
             <div class="search-container">
                 <i class="fas fa-search"></i>
                 <form method="GET" action="" style="display:inline;">
-                    <input type="text" name="cari" placeholder="Search menu..." value="<?= htmlspecialchars($cari); ?>">
+                    <input type="text" name="cari" placeholder="Cari menu..." value="<?= htmlspecialchars($cari); ?>">
                     <button type="submit" style="display:none;"></button>
                 </form>
             </div>
@@ -444,7 +444,7 @@ $popular = mysqli_query($conn, $popular_query);
             </div>
         </div>
 
-        <h2>Choose Category</h2>
+        <h2>Pilih Kategori</h2>
         <div class="category-list">
              <form method="GET" action="" style="display:contents;">
                  <input type="hidden" name="cari" value="<?= htmlspecialchars($cari); ?>">
