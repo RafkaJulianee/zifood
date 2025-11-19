@@ -285,11 +285,11 @@ if (isset($_GET['logout'])) {
                 borderWidth: 1,
                 borderRadius: 5,
                 // [PERUBAHAN PENTING] 
-                // 1. Menghilangkan garis grid (bukan tambahin garis)
-                // 2. Memperbesar barPercentage menjadi 0.9 agar batang lebih lebar dan jarak antar batang (oren) jadi DEKAT.
-                // 3. Menambah categoryPercentage menjadi 0.9 agar mengurangi padding di sisi kiri/kanan grup.
-                barPercentage: 0.9, 
-                categoryPercentage: 0.9,
+                // Menghapus 'barThickness' fix (15px) agar tidak terlalu padat/terlalu renggang.
+                // Menggunakan maxBarThickness agar bar tidak terlalu raksasa jika data sedikit.
+                // Menggunakan barPercentage < 1.0 agar ada jarak antar bar.
+                maxBarThickness: 50,
+                barPercentage: 0.6, 
             }]
         },
         options: {
@@ -298,7 +298,7 @@ if (isset($_GET['logout'])) {
             scales: {
                 y: {
                     beginAtZero: true,
-                    grid: { display: false }, // Menghapus grid tambahan
+                    grid: { display: true, borderDash: [5, 5] }, // Tambahkan grid halus untuk keterbacaan
                     title: { display: true, text: 'Rupiah (Rp)' }
                 },
                 x: { 
@@ -308,6 +308,7 @@ if (isset($_GET['logout'])) {
                         tooltipFormat: 'dd MMM yyyy',
                         displayFormats: { day: 'dd MMM' }
                     },
+                    // [PERUBAHAN PENTING] offset: true memberi ruang di kiri/kanan sumbu X agar bar tidak mepet tepi
                     offset: true,
                     grid: { display: false },
                     title: { display: true, text: 'Hari' } 
