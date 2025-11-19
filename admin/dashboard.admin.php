@@ -8,7 +8,6 @@ if (!isset($_SESSION['id_admin'])) {
     exit;
 }
 
-// ... (PHP logic remains the same) ...
 // Ambil data total menu
 $totalMenu = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) AS total FROM menu"))['total'];
 
@@ -71,8 +70,6 @@ if (isset($_GET['logout'])) {
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    
-    <!-- Adapter Date-Fns untuk skala waktu -->
     <script src="https://cdn.jsdelivr.net/npm/date-fns@2/index.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@2/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
     
@@ -111,8 +108,30 @@ if (isset($_GET['logout'])) {
             padding: 10px; margin: 5px 0; color: #9ca3af; font-size: 20px;
             transition: color 0.2s, background-color 0.2s;
             border-radius: 8px; text-decoration: none;
+            position: relative; /* Penting untuk badge */
+            display: flex; justify-content: center; align-items: center;
+            width: 40px; height: 40px;
         }
         .nav-link:hover, .nav-link.active { color: var(--theme-primary); background-color: #fcebeb; }
+        
+        /* --- BADGE NOTIFIKASI MERAH --- */
+        .notification-badge {
+            position: absolute;
+            top: -2px;
+            right: -2px;
+            background-color: #ff3b30; /* Merah terang */
+            color: white;
+            font-size: 10px;
+            font-weight: 700;
+            padding: 2px 5px;
+            border-radius: 10px;
+            min-width: 15px;
+            text-align: center;
+            line-height: 1;
+            border: 2px solid white; /* Supaya kontras dengan icon */
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+
         .main-content {
             flex-grow: 1; display: grid;
             grid-template-columns: repeat(4, 1fr);
@@ -185,7 +204,15 @@ if (isset($_GET['logout'])) {
         <a href="dashboard.admin.php" class="nav-link active" title="Dashboard"><i class="fas fa-chart-line"></i></a>
         <a href="menu.php" class="nav-link" title="Kelola Menu"><i class="fas fa-utensils"></i></a>
         <a href="tambah.php" class="nav-link" title="Tambah Menu"><i class="fas fa-plus"></i></a>
-        <a href="pesanan.php" class="nav-link" title="Kelola Pesanan"><i class="fas fa-receipt"></i></a>
+        
+        <!-- NAVBAR PESANAN DENGAN BADGE -->
+        <a href="pesanan.php" class="nav-link" title="Kelola Pesanan">
+            <i class="fas fa-receipt"></i>
+            <?php if ($totalMenunggu > 0): ?>
+                <span class="notification-badge"><?= $totalMenunggu; ?></span>
+            <?php endif; ?>
+        </a>
+        
         <a href="dashboard.admin.php?logout=true" class="nav-link" onclick="return logoutConfirm()" title="Logout"><i class="fas fa-sign-out-alt"></i></a>
     </div>
 
@@ -284,10 +311,6 @@ if (isset($_GET['logout'])) {
                 borderColor: 'rgba(255, 87, 34, 1)',
                 borderWidth: 1,
                 borderRadius: 5,
-                // [PERUBAHAN PENTING] 
-                // Menghapus 'barThickness' fix (15px) agar tidak terlalu padat/terlalu renggang.
-                // Menggunakan maxBarThickness agar bar tidak terlalu raksasa jika data sedikit.
-                // Menggunakan barPercentage < 1.0 agar ada jarak antar bar.
                 maxBarThickness: 50,
                 barPercentage: 0.6, 
             }]
@@ -298,7 +321,7 @@ if (isset($_GET['logout'])) {
             scales: {
                 y: {
                     beginAtZero: true,
-                    grid: { display: true, borderDash: [5, 5] }, // Tambahkan grid halus untuk keterbacaan
+                    grid: { display: true, borderDash: [5, 5] },
                     title: { display: true, text: 'Rupiah (Rp)' }
                 },
                 x: { 
@@ -308,7 +331,6 @@ if (isset($_GET['logout'])) {
                         tooltipFormat: 'dd MMM yyyy',
                         displayFormats: { day: 'dd MMM' }
                     },
-                    // [PERUBAHAN PENTING] offset: true memberi ruang di kiri/kanan sumbu X agar bar tidak mepet tepi
                     offset: true,
                     grid: { display: false },
                     title: { display: true, text: 'Hari' } 
