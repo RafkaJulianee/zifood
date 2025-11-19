@@ -301,15 +301,6 @@ $popular = mysqli_query($conn, $popular_query);
             transition: var(--transition-fast); /* Transisi untuk hover */
             font-family: inherit; 
         }
-        .cart-btn {
-            background-color: white;
-            color: var(--primary-color);
-            border: 1px solid var(--primary-color);
-        }
-        .cart-btn:hover {
-             background-color: var(--primary-color);
-             color: white;
-        }
         .order-btn {
             background-color: var(--primary-color);
             color: white;
@@ -474,11 +465,6 @@ $popular = mysqli_query($conn, $popular_query);
                             <span class="menu-rating">⭐ <?= number_format($row['rating_rata'], 1); ?></span>
                             
                             <div class="menu-actions">
-                                <form method="POST" action="tambah_keranjang.php" style="display: inline-block; flex: 1;">
-                                    <input type="hidden" name="id_menu" value="<?= $row['id_menu']; ?>">
-                                    <button type="submit" class="action-btn cart-btn"><i class="fas fa-shopping-basket"></i> Cart</button>
-                                </form>
-                                
                                 <form method="GET" action="order.php" style="display: inline-block; flex: 1;">
                                     <input type="hidden" name="id_menu" value="<?= $row['id_menu']; ?>">
                                     <button type="submit" class="action-btn order-btn"><i class="fas fa-receipt"></i> Pesan</button>
