@@ -11,7 +11,7 @@ if (!isset($_SESSION['id_user'])) {
 $id_user = $_SESSION['id_user'];
 
 // ==========================================================
-// 1. LOGIKA SUBMIT RATING BARU
+// 1. LOGIKA SUBMIT RATING BARU (DIPERBARUI)
 // ==========================================================
 if (isset($_POST['submit_rating'])) {
     $id_pesanan_rated = (int)$_POST['id_pesanan_rated'];
@@ -20,10 +20,11 @@ if (isset($_POST['submit_rating'])) {
 
     // Validasi nilai rating (1 sampai 5)
     if ($nilai >= 1 && $nilai <= 5) {
+        
         // A. Insert rating baru ke tabel 'rating'
-        // Pastikan Anda sudah membuat tabel 'rating' di database!
-        $insert_rating = "INSERT INTO rating (id_user, id_menu, nilai, komentar) 
-                          VALUES ('$id_user', '$id_menu_rated', '$nilai', 'Rating via Notifikasi')";
+        // PERUBAHAN: Kolom 'komentar' dan isinya sudah dihapus di sini
+        $insert_rating = "INSERT INTO rating (id_user, id_menu, nilai) 
+                          VALUES ('$id_user', '$id_menu_rated', '$nilai')";
         
         if (mysqli_query($conn, $insert_rating)) {
             
@@ -33,7 +34,7 @@ if (isset($_POST['submit_rating'])) {
                       WHERE m.id_menu = '$id_menu_rated'";
             mysqli_query($conn, $avg_q);
             
-            // C. Hapus notifikasi setelah rating diberikan (agar tidak bisa rating 2 kali)
+            // C. Hapus notifikasi setelah rating diberikan
             $delete_notif = "DELETE FROM notifikasi WHERE id_pesanan='$id_pesanan_rated' AND id_user='$id_user'";
             mysqli_query($conn, $delete_notif);
             
@@ -59,7 +60,6 @@ $unread_notif_count = mysqli_fetch_assoc(mysqli_query($conn, $unread_notif_query
 // ==========================================================
 // 3. QUERY DATA NOTIFIKASI & MENU POPULER
 // ==========================================================
-// Ambil Notifikasi + Data Menu terkait
 $notif_query = "
     SELECT 
         n.*,
@@ -79,7 +79,7 @@ $notif_query = "
 ";
 $notifikasi_result = mysqli_query($conn, $notif_query);
 
-// Menu Populer (Sidebar Kanan)
+// Menu Populer
 $popular_query = "
     SELECT m.*, COUNT(p.id_menu) AS total_orders 
     FROM menu m JOIN pesanan p ON m.id_menu = p.id_menu
@@ -87,7 +87,6 @@ $popular_query = "
 ";
 $popular = mysqli_query($conn, $popular_query);
 
-// Fungsi helper waktu
 function time_ago($timestamp) {
     $diff = time() - strtotime($timestamp);
     if ($diff < 60) return "Baru saja";
@@ -109,9 +108,8 @@ function time_ago($timestamp) {
         /* --- CSS GLOBAL --- */
         :root { --primary-color: #FF5722; --bg-light: #f7f7f7; --sidebar-width: 80px; }
         body { margin: 0; font-family: 'Poppins', sans-serif; background-color: var(--bg-light); min-height: 100vh; }
-
         .dashboard-layout { display: grid; grid-template-columns: var(--sidebar-width) 1fr 300px; min-height: 100vh; background-color: white; }
-
+        
         /* SIDEBAR */
         .sidebar { background-color: white; border-right: 1px solid #eee; padding: 20px 0; display: flex; flex-direction: column; align-items: center; }
         .logo { color: var(--primary-color); font-size: 30px; margin-bottom: 40px; }
@@ -127,7 +125,6 @@ function time_ago($timestamp) {
         /* NOTIF LIST */
         .notif-list { list-style: none; padding: 0; margin: 0; max-width: 800px; margin: 0 auto; }
         .notif-item { display: flex; align-items: flex-start; padding: 20px; border: 1px solid #eee; border-radius: 12px; margin-bottom: 15px; background-color: #fff; box-shadow: 0 2px 5px rgba(0,0,0,0.02); }
-        
         .notif-img { width: 60px; height: 60px; border-radius: 10px; object-fit: cover; margin-right: 20px; border: 1px solid #f0f0f0; }
         .notif-content { flex-grow: 1; }
         .notif-message { font-size: 15px; font-weight: 500; color: #333; line-height: 1.5; margin-bottom: 5px; }
@@ -135,22 +132,15 @@ function time_ago($timestamp) {
 
         /* RATING BOX */
         .rating-box { 
-            background-color: #fff8f5; 
-            border: 1px dashed var(--primary-color); 
-            padding: 15px; 
-            border-radius: 8px; 
-            margin-top: 15px; 
-            text-align: center;
+            background-color: #fff8f5; border: 1px dashed var(--primary-color); 
+            padding: 15px; border-radius: 8px; margin-top: 15px; text-align: center;
             animation: fadeIn 0.5s ease;
         }
         @keyframes fadeIn { from { opacity:0; transform:translateY(-10px); } to { opacity:1; transform:translateY(0); } }
-
         .rating-label { display: block; font-weight: 600; font-size: 14px; color: var(--primary-color); margin-bottom: 10px; }
-        
         .rating-stars { display: inline-block; margin-bottom: 10px; }
         .star-btn { background: none; border: none; color: #ddd; font-size: 28px; cursor: pointer; transition: 0.2s; padding: 0 5px; }
         .star-btn:hover, .star-btn.rated { color: #ffc107; transform: scale(1.1); }
-        
         .btn-rate-submit { 
             background-color: var(--primary-color); color: white; padding: 10px 25px; 
             border: none; border-radius: 25px; font-weight: 600; cursor: pointer; 
@@ -171,8 +161,6 @@ function time_ago($timestamp) {
 <body>
 
 <div class="dashboard-layout">
-    
-    <!-- SIDEBAR -->
     <div class="sidebar">
         <div class="logo"><i class="fas fa-utensils"></i></div>     
         <a href="dashboard.php" class="nav-link" title="Dashboard"><i class="fas fa-home"></i></a>  
@@ -185,7 +173,6 @@ function time_ago($timestamp) {
         <a href="logout.php" class="nav-link" onclick="return confirm('Logout?')" title="Logout"><i class="fas fa-sign-out-alt"></i></a>
     </div>
 
-    <!-- MAIN CONTENT -->
     <div class="main-content">
         <div class="header">
             <h2>Notifikasi & Penilaian</h2>
@@ -195,8 +182,6 @@ function time_ago($timestamp) {
             <?php if (mysqli_num_rows($notifikasi_result) > 0): ?>
                 <?php while ($row = mysqli_fetch_assoc($notifikasi_result)): ?>
                     <?php 
-                        // PENTING: Deteksi kata 'selesai' agar form rating muncul
-                        // Ini akan cocok dengan pesan admin: "Pesanan Anda... telah selesai"
                         $is_completed = stripos($row['pesan'], 'selesai') !== false;
                     ?>
                     
@@ -210,10 +195,8 @@ function time_ago($timestamp) {
                             <div class="notif-time"><i class="far fa-clock"></i> <?= time_ago($row['waktu']); ?></div>
                             
                             <?php if ($is_completed): ?>
-                                <!-- FORMULIR RATING BINTANG 5 -->
                                 <div class="rating-box" id="rate-container-<?= $row['id_pesanan']; ?>">
                                     <form method="POST" action="">
-                                        <!-- Data tersembunyi untuk dikirim -->
                                         <input type="hidden" name="id_pesanan_rated" value="<?= $row['id_pesanan']; ?>">
                                         <input type="hidden" name="id_menu_rated" value="<?= $row['id_menu']; ?>">
                                         <input type="hidden" name="rating_value" class="rating-value" value="0">
@@ -246,7 +229,6 @@ function time_ago($timestamp) {
         </ul>
     </div>
 
-    <!-- RIGHT SIDEBAR -->
     <div class="right-sidebar">
         <h3 style="margin-top: 0; border-bottom: 2px solid var(--primary-color); padding-bottom: 10px;">Menu Terlaris 🔥</h3>
         <?php if (mysqli_num_rows($popular) > 0): ?>
@@ -265,32 +247,26 @@ function time_ago($timestamp) {
         <?php endif; ?>
         <a href="dashboard.php" class="add-btn">Kembali ke Menu</a>
     </div>
-
 </div>
 
 <script>
-    // JAVASCRIPT UNTUK RATING BINTANG
     function selectRating(idPesanan, value) {
         const container = document.getElementById('rate-container-' + idPesanan);
         const stars = container.querySelectorAll('.star-btn');
         const hiddenInput = container.querySelector('.rating-value');
         const submitButton = container.querySelector('.btn-rate-submit');
 
-        // 1. Masukkan nilai bintang ke input hidden
         hiddenInput.value = value;
-        
-        // 2. Aktifkan tombol submit
         submitButton.disabled = false;
         submitButton.innerHTML = "Kirim " + value + " Bintang";
 
-        // 3. Warnai bintang (Kuning jika <= nilai yang dipilih)
         stars.forEach((star, index) => {
             if (index < value) {
                 star.classList.add('rated');
-                star.style.color = '#ffc107'; // Emas
+                star.style.color = '#ffc107';
             } else {
                 star.classList.remove('rated');
-                star.style.color = '#ddd'; // Abu-abu
+                star.style.color = '#ddd';
             }
         });
     }
