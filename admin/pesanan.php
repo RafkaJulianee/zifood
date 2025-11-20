@@ -25,7 +25,6 @@ if (isset($_POST['update_status'])) {
     if (in_array($new_status, $allowed_statuses)) {
         
         // Khusus untuk 'Dine-in', pastikan perubahannya hanya ke 'Selesai'
-        // (Ini asumsi, bisa disesuaikan. Tapi untuk sekarang kita izinkan saja)
         if ($new_status === 'Selesai') {
              $pesan = "Pesanan Anda (ID #$id_pesanan) telah selesai. Terima kasih!";
         }
@@ -91,7 +90,7 @@ $query_pesanan = "
 
 $result_pesanan = mysqli_query($conn, $query_pesanan);
 
-// Hitung jumlah untuk Tab
+// Hitung jumlah untuk Tab & Badge Notifikasi
 // [PERUBAHAN] Menambahkan status 'Dine-in' ke perhitungan
 $count_query = mysqli_query($conn, "SELECT status, COUNT(*) as count FROM pesanan GROUP BY status WITH ROLLUP");
 $status_counts = ['All' => 0, 'Menunggu' => 0, 'Dikonfirmasi' => 0, 'Ditolak' => 0, 'Selesai' => 0, 'Dine-in' => 0]; // Tambah Dine-in
@@ -102,6 +101,9 @@ while ($row = mysqli_fetch_assoc($count_query)) {
         $status_counts[$row['status']] = $row['count'];
     }
 }
+
+// Variabel untuk badge merah di sidebar
+$totalMenunggu = $status_counts['Menunggu'];
 ?>
 
 <!DOCTYPE html>
@@ -161,10 +163,36 @@ while ($row = mysqli_fetch_assoc($count_query)) {
             transition: color 0.2s, background-color 0.2s;
             border-radius: 8px;
             text-decoration: none;
+            
+            /* POSISI RELATIVE UNTUK BADGE */
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 40px;
+            height: 40px;
         }
         .nav-link:hover, .nav-link.active {
             color: var(--theme-primary);
             background-color: #fcebeb;
+        }
+
+        /* CSS BADGE NOTIFIKASI */
+        .notification-badge {
+            position: absolute;
+            top: -2px;
+            right: -2px;
+            background-color: #ff3b30; /* Merah menyala */
+            color: white;
+            font-size: 10px;
+            font-weight: 700;
+            padding: 2px 5px;
+            border-radius: 10px;
+            min-width: 15px;
+            text-align: center;
+            line-height: 1;
+            border: 2px solid white;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
         }
 
         /* KONTEN UTAMA */
@@ -347,7 +375,13 @@ while ($row = mysqli_fetch_assoc($count_query)) {
         <a href="menu.php" class="nav-link" title="Kelola Menu"><i class="fas fa-utensils"></i></a>
         <a href="tambah.php" class="nav-link" title="Tambah Menu"><i class="fas fa-plus"></i></a>
         
-        <a href="pesanan.php" class="nav-link active" title="Kelola Pesanan"><i class="fas fa-receipt"></i></a>
+        <!-- LINK PESANAN DENGAN BADGE MERAH -->
+        <a href="pesanan.php" class="nav-link active" title="Kelola Pesanan">
+            <i class="fas fa-receipt"></i>
+            <?php if ($totalMenunggu > 0): ?>
+                <span class="notification-badge"><?= $totalMenunggu; ?></span>
+            <?php endif; ?>
+        </a>
         
         <a href="logout.php" class="nav-link" onclick="return logoutConfirm()" title="Logout"><i class="fas fa-sign-out-alt"></i></a>
     </div>

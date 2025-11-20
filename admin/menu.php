@@ -38,6 +38,12 @@ if (isset($_GET['hapus'])) {
 
 // Ambil data menu untuk ditampilkan
 $menu = mysqli_query($conn, "SELECT * FROM menu ORDER BY id_menu DESC");
+
+// ==========================================================
+// HITUNG BADGE PESANAN (Untuk Sidebar)
+// ==========================================================
+$q_badge = mysqli_query($conn, "SELECT COUNT(*) AS total FROM pesanan WHERE status='Menunggu'");
+$totalMenunggu = mysqli_fetch_assoc($q_badge)['total'] ?? 0;
 ?>
 
 <!DOCTYPE html>
@@ -64,7 +70,7 @@ $menu = mysqli_query($conn, "SELECT * FROM menu ORDER BY id_menu DESC");
             color: var(--text-dark);
         }
 
-        /* --- LAYOUT UTAMA (Sama seperti Dashboard) --- */
+        /* --- LAYOUT UTAMA --- */
         .dashboard-wrapper {
             padding: 20px;
             display: flex;
@@ -73,7 +79,7 @@ $menu = mysqli_query($conn, "SELECT * FROM menu ORDER BY id_menu DESC");
             box-sizing: border-box;
         }
 
-        /* --- SIDEBAR (Sama seperti Dashboard) --- */
+        /* --- SIDEBAR --- */
         .sidebar {
             width: 70px;
             background-color: white;
@@ -84,7 +90,7 @@ $menu = mysqli_query($conn, "SELECT * FROM menu ORDER BY id_menu DESC");
             display: flex;
             flex-direction: column;
             align-items: center;
-            height: fit-content; /* Agar sidebar tidak memanjang paksa ke bawah jika konten sedikit */
+            height: fit-content;
             min-height: 80vh;
         }
         .nav-link {
@@ -95,13 +101,36 @@ $menu = mysqli_query($conn, "SELECT * FROM menu ORDER BY id_menu DESC");
             transition: color 0.2s, background-color 0.2s;
             border-radius: 8px;
             text-decoration: none;
-            display: block;
-            text-align: center;
+            
+            /* Update untuk posisi Badge */
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
             width: 40px;
+            height: 40px;
         }
         .nav-link:hover, .nav-link.active {
             color: var(--theme-primary);
             background-color: #fcebeb;
+        }
+        
+        /* CSS Badge Merah */
+        .notification-badge {
+            position: absolute;
+            top: -2px;
+            right: -2px;
+            background-color: #ff3b30; /* Merah terang */
+            color: white;
+            font-size: 10px;
+            font-weight: 700;
+            padding: 2px 5px;
+            border-radius: 10px;
+            min-width: 15px;
+            text-align: center;
+            line-height: 1;
+            border: 2px solid white;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
         }
 
         /* --- KONTEN UTAMA --- */
@@ -123,23 +152,8 @@ $menu = mysqli_query($conn, "SELECT * FROM menu ORDER BY id_menu DESC");
             padding-bottom: 15px;
             border-bottom: 1px solid #eee;
         }
-        h1 {
-            font-size: 24px;
-            font-weight: 600;
-            margin: 0;
-        }
-        .back-link {
-            text-decoration: none;
-            color: #999;
-            font-size: 14px;
-            display: flex;
-            align-items: center;
-            gap: 5px;
-            margin-bottom: 5px;
-            transition: color 0.2s;
-        }
-        .back-link:hover { color: var(--theme-primary); }
-
+        h1 { font-size: 24px; font-weight: 600; margin: 0; }
+        
         .btn-add {
             background-color: var(--theme-primary);
             color: white;
@@ -156,11 +170,7 @@ $menu = mysqli_query($conn, "SELECT * FROM menu ORDER BY id_menu DESC");
         .btn-add:hover { background-color: #e64a19; }
 
         /* --- TABEL --- */
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 10px;
-        }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
         th {
             background-color: #f9fafb;
             color: #6b7280;
@@ -181,50 +191,24 @@ $menu = mysqli_query($conn, "SELECT * FROM menu ORDER BY id_menu DESC");
         tr:hover { background-color: #fafafa; }
 
         .img-thumb {
-            width: 50px;
-            height: 50px;
-            border-radius: 8px;
-            object-fit: cover;
-            border: 1px solid #eee;
+            width: 50px; height: 50px; border-radius: 8px; object-fit: cover; border: 1px solid #eee;
         }
 
         .badge {
-            padding: 4px 8px;
-            border-radius: 4px;
-            font-size: 11px;
-            font-weight: 500;
-            display: inline-block;
-            margin-right: 5px;
+            padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: 500; display: inline-block; margin-right: 5px;
         }
         .badge-cat { background-color: #e3f2fd; color: #1565c0; }
         .badge-star { background-color: #fff8e1; color: #f57f17; }
-
-        .price {
-            font-weight: 600;
-            color: var(--theme-primary);
-        }
+        .price { font-weight: 600; color: var(--theme-primary); }
 
         /* --- ACTION BUTTONS --- */
-        .action-wrapper {
-            display: flex;
-            gap: 5px;
-        }
+        .action-wrapper { display: flex; gap: 5px; }
         .btn-icon {
-            width: 32px;
-            height: 32px;
-            border-radius: 6px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border: none;
-            cursor: pointer;
-            transition: all 0.2s;
-            color: white;
-            font-size: 12px;
+            width: 32px; height: 32px; border-radius: 6px; display: flex; align-items: center; justify-content: center;
+            border: none; cursor: pointer; transition: all 0.2s; color: white; font-size: 12px;
         }
         .btn-edit { background-color: #FFB74D; } 
         .btn-edit:hover { background-color: #ffa726; }
-        
         .btn-delete { background-color: #ef9a9a; } 
         .btn-delete:hover { background-color: #ef5350; }
 
@@ -232,46 +216,17 @@ $menu = mysqli_query($conn, "SELECT * FROM menu ORDER BY id_menu DESC");
         .edit-mode { display: none; background-color: #fdfdfd; }
         .view-mode { display: table-row; }
         
-        .form-inline {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 10px;
-        }
+        .form-inline { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
         .form-inline input, .form-inline textarea {
-            width: 100%;
-            padding: 8px;
-            border: 1px solid #ddd;
-            border-radius: 6px;
-            font-size: 13px;
-            box-sizing: border-box;
-            font-family: inherit;
+            width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 6px; font-size: 13px; box-sizing: border-box; font-family: inherit;
         }
         .form-inline textarea { grid-column: 1 / span 2; height: 60px; resize: vertical; }
         
-        .btn-save {
-            background-color: var(--success-color);
-            color: white;
-            padding: 6px 12px;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 12px;
-            margin-right: 5px;
-        }
-        .btn-cancel {
-            background-color: #999;
-            color: white;
-            padding: 6px 12px;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 12px;
-        }
+        .btn-save { background-color: var(--success-color); color: white; padding: 6px 12px; border: none; border-radius: 6px; cursor: pointer; font-size: 12px; margin-right: 5px; }
+        .btn-cancel { background-color: #999; color: white; padding: 6px 12px; border: none; border-radius: 6px; cursor: pointer; font-size: 12px; }
     </style>
     <script>
-        function confirmDelete() {
-            return confirm("Yakin mau hapus menu ini?");
-        }
+        function confirmDelete() { return confirm("Yakin mau hapus menu ini?"); }
 
         function toggleEdit(id) {
             var viewRow = document.getElementById('view-' + id);
@@ -286,9 +241,7 @@ $menu = mysqli_query($conn, "SELECT * FROM menu ORDER BY id_menu DESC");
             }
         }
 
-        function logoutConfirm() {
-            return confirm("Yakin mau logout dari akun admin?");
-        }
+        function logoutConfirm() { return confirm("Yakin mau logout dari akun admin?"); }
     </script>
 </head>
 <body>
@@ -299,14 +252,21 @@ $menu = mysqli_query($conn, "SELECT * FROM menu ORDER BY id_menu DESC");
         <a href="dashboard.admin.php" class="nav-link" title="Dashboard"><i class="fas fa-chart-line"></i></a>
         <a href="menu.php" class="nav-link active" title="Kelola Menu"><i class="fas fa-utensils"></i></a>
         <a href="tambah.php" class="nav-link" title="Tambah Menu"><i class="fas fa-plus"></i></a>
-        <a href="pesanan.php" class="nav-link" title="Kelola Pesanan"><i class="fas fa-receipt"></i></a>
+        
+        <!-- ICON PESANAN DENGAN NOTIFIKASI -->
+        <a href="pesanan.php" class="nav-link" title="Kelola Pesanan">
+            <i class="fas fa-receipt"></i>
+            <?php if ($totalMenunggu > 0): ?>
+                <span class="notification-badge"><?= $totalMenunggu; ?></span>
+            <?php endif; ?>
+        </a>
+        
         <a href="logout.php" class="nav-link" onclick="return logoutConfirm()" title="Logout"><i class="fas fa-sign-out-alt"></i></a>
     </div>
 
     <div class="main-content">
         <div class="header-action">
             <div>
-               
                 <h1>Daftar Menu Makanan</h1>
             </div>
             <a href="tambah.php" class="btn-add"><i class="fas fa-plus"></i> Tambah Menu Baru</a>

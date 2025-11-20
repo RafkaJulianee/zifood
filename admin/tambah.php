@@ -2,7 +2,6 @@
 session_start();
 include '../koneksi.php';
 
-// Cek apakah admin sudah login
 if (!isset($_SESSION['id_admin'])) {
     header("Location: ../index.php");
     exit;
@@ -29,6 +28,12 @@ if (isset($_POST['tambah'])) {
     mysqli_query($conn, $query_insert);
     echo "<script>alert('Menu berhasil ditambahkan!'); window.location='menu.php';</script>";
 }
+
+// ==========================================================
+// HITUNG NOTIFIKASI PESANAN (Untuk Badge Sidebar)
+// ==========================================================
+$q_badge = mysqli_query($conn, "SELECT COUNT(*) AS total FROM pesanan WHERE status='Menunggu'");
+$totalMenunggu = mysqli_fetch_assoc($q_badge)['total'] ?? 0;
 ?>
 
 <!DOCTYPE html>
@@ -85,10 +90,36 @@ if (isset($_POST['tambah'])) {
             transition: color 0.2s, background-color 0.2s;
             border-radius: 8px;
             text-decoration: none;
+            
+            /* MODIFIKASI POSISI UNTUK BADGE */
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 40px;
+            height: 40px;
         }
         .nav-link:hover, .nav-link.active {
             color: var(--theme-primary);
             background-color: #fcebeb;
+        }
+        
+        /* --- CSS BADGE NOTIFIKASI --- */
+        .notification-badge {
+            position: absolute;
+            top: -2px;
+            right: -2px;
+            background-color: #ff3b30; /* Merah menyala */
+            color: white;
+            font-size: 10px;
+            font-weight: 700;
+            padding: 2px 5px;
+            border-radius: 10px;
+            min-width: 15px;
+            text-align: center;
+            line-height: 1;
+            border: 2px solid white; /* Outline putih biar kontras */
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
         }
 
         /* --- KONTEN FORMULIR (Area Kanan) --- */
@@ -320,7 +351,14 @@ if (isset($_POST['tambah'])) {
         
         <a href="tambah.php" class="nav-link active" title="Tambah Menu"><i class="fas fa-plus"></i></a>
         
-        <a href="pesanan.php" class="nav-link" title="Kelola Pesanan"><i class="fas fa-receipt"></i></a>
+        <!-- LINK PESANAN DENGAN BADGE MERAH -->
+        <a href="pesanan.php" class="nav-link" title="Kelola Pesanan">
+            <i class="fas fa-receipt"></i>
+            <?php if ($totalMenunggu > 0): ?>
+                <span class="notification-badge"><?= $totalMenunggu; ?></span>
+            <?php endif; ?>
+        </a>
+        
         <a href="logout.php" class="nav-link" onclick="return logoutConfirm()" title="Logout"><i class="fas fa-sign-out-alt"></i></a>
     </div>
 
