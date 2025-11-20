@@ -112,7 +112,20 @@ function time_ago($timestamp) {
         
         /* SIDEBAR */
         .sidebar { background-color: white; border-right: 1px solid #eee; padding: 20px 0; display: flex; flex-direction: column; align-items: center; }
-        .logo { color: var(--primary-color); font-size: 30px; margin-bottom: 40px; }
+                .logo {
+    margin-bottom: 40px;
+    /* Hapus color dan font-size, karena tidak berpengaruh pada gambar */
+    display: flex;
+    justify-content: center; /* Agar logo berada tepat di tengah sidebar */
+}
+
+/* Tambahkan style baru khusus untuk gambarnya */
+.logo img {
+    width: 50px; /* Sesuaikan ukuran ini agar pas (Sidebar Anda lebarnya 80px) */
+    height: auto; /* Agar gambar tetap proporsional */
+    object-fit: contain;
+    border-radius: 50px;
+}
         .nav-link { display: block; padding: 15px 0; margin: 5px 0; text-align: center; color: #999; font-size: 20px; width: 100%; position: relative; text-decoration: none; }
         .nav-link:hover, .nav-link.active { color: var(--primary-color); background-color: #ffece6; border-left: 3px solid var(--primary-color); }
         .notification-badge { position: absolute; top: 8px; right: 15px; background-color: red; color: white; font-size: 10px; padding: 2px 5px; border-radius: 50%; }
@@ -161,8 +174,10 @@ function time_ago($timestamp) {
 <body>
 
 <div class="dashboard-layout">
-    <div class="sidebar">
-        <div class="logo"><i class="fas fa-utensils"></i></div>     
+       <div class="sidebar">
+        <div class="logo">
+    <img src="img/zifood.png" alt="Logo ZIFOOD">
+</div>    
         <a href="dashboard.php" class="nav-link" title="Dashboard"><i class="fas fa-home"></i></a>  
         <a href="notifikasi.php" class="nav-link active" title="Notifikasi">
             <i class="fas fa-bell"></i>

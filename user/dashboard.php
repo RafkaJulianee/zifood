@@ -104,11 +104,21 @@ $popular = mysqli_query($conn, $popular_query);
             flex-direction: column;
             align-items: center;
         }
+       
         .logo {
-            color: var(--primary-color);
-            font-size: 30px;
-            margin-bottom: 40px;
-        }
+    margin-bottom: 40px;
+    /* Hapus color dan font-size, karena tidak berpengaruh pada gambar */
+    display: flex;
+    justify-content: center; /* Agar logo berada tepat di tengah sidebar */
+}
+
+/* Tambahkan style baru khusus untuk gambarnya */
+.logo img {
+    width: 50px; /* Sesuaikan ukuran ini agar pas (Sidebar Anda lebarnya 80px) */
+    height: auto; /* Agar gambar tetap proporsional */
+    object-fit: contain;
+    border-radius: 50px;
+}
         .nav-link {
             display: block;
             padding: 15px 0;
@@ -400,7 +410,7 @@ $popular = mysqli_query($conn, $popular_query);
     
     <div class="sidebar">
         <div class="logo">
-    <img src="img/zifood white.png" alt="Logo ZIFOOD">
+    <img src="img/zifood.png" alt="Logo ZIFOOD">
 </div>
         <a href="dashboard.php" class="nav-link active" title="Dashboard"><i class="fas fa-home"></i></a>
         <a href="notifikasi.php" class="nav-link" title="Notifikasi">
