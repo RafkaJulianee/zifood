@@ -399,7 +399,9 @@ $popular = mysqli_query($conn, $popular_query);
 <div class="dashboard-layout">
     
     <div class="sidebar">
-        <div class="logo"><i class="fas fa-utensils"></i></div>
+        <div class="logo">
+    <img src="img/zifood white.png" alt="Logo ZIFOOD">
+</div>
         <a href="dashboard.php" class="nav-link active" title="Dashboard"><i class="fas fa-home"></i></a>
         <a href="notifikasi.php" class="nav-link" title="Notifikasi">
             <i class="fas fa-bell"></i>
