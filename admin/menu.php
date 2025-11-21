@@ -8,30 +8,17 @@ if (!isset($_SESSION['id_admin'])) {
     exit;
 }
 
-// ========== LOGIKA UPDATE (Mengubah Menu) ==========
-if (isset($_POST['edit'])) {
-    $id = $_POST['id_menu'];
-    $nama = mysqli_real_escape_string($conn, $_POST['nama_menu']);
-    $kategori = mysqli_real_escape_string($conn, $_POST['kategori']);
-    $harga = mysqli_real_escape_string($conn, $_POST['harga']);
-    $deskripsi = mysqli_real_escape_string($conn, $_POST['deskripsi']);
-    
-    // cek foto baru
-    $fotoQuery = "";
-    if (!empty($_FILES['foto']['name'])) {
-        $foto = time() . "_" . $_FILES['foto']['name'];
-        move_uploaded_file($_FILES['foto']['tmp_name'], "../assets/img/" . $foto);
-        $fotoQuery = ", foto='$foto'";
-    }
-
-    // Query UPDATE menu
-    mysqli_query($conn, "UPDATE menu SET nama_menu='$nama', kategori='$kategori', harga='$harga', deskripsi='$deskripsi' $fotoQuery WHERE id_menu='$id'");
-    echo "<script>alert('Menu berhasil diperbarui!'); window.location='menu.php';</script>";
-}
-
-// ========== LOGIKA DELETE (Menghapus Menu) ==========
+// ========== LOGIKA DELETE (Tetap di sini) ==========
+// Fitur hapus biasanya tetap di halaman list atau dibuat file aksi terpisah. 
+// Untuk saat ini kita biarkan di sini agar praktis.
 if (isset($_GET['hapus'])) {
     $id = $_GET['hapus'];
+    
+    // Opsional: Ambil nama foto dulu jika ingin menghapus file fisik foto dari folder
+    // $q_foto = mysqli_query($conn, "SELECT foto FROM menu WHERE id_menu='$id'");
+    // $d_foto = mysqli_fetch_assoc($q_foto);
+    // if ($d_foto['foto']) { unlink("../assets/img/" . $d_foto['foto']); }
+
     mysqli_query($conn, "DELETE FROM menu WHERE id_menu='$id'");
     echo "<script>alert('Menu berhasil dihapus!'); window.location='menu.php';</script>";
 }
@@ -50,8 +37,7 @@ $totalMenunggu = mysqli_fetch_assoc($q_badge)['total'] ?? 0;
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <title>Kelola Menu</title>
-    <link rel="stylesheet" href="css/dashbo">
+    <title>Kelola Menu - Admin ZIFOOD</title>
     <link rel="shortcut icon" href="img/zifood.png" type="image/x-icon">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
@@ -102,8 +88,6 @@ $totalMenunggu = mysqli_fetch_assoc($q_badge)['total'] ?? 0;
             transition: color 0.2s, background-color 0.2s;
             border-radius: 8px;
             text-decoration: none;
-            
-            /* Update untuk posisi Badge */
             position: relative;
             display: flex;
             justify-content: center;
@@ -116,12 +100,12 @@ $totalMenunggu = mysqli_fetch_assoc($q_badge)['total'] ?? 0;
             background-color: #fcebeb;
         }
         
-        /* CSS Badge Merah */
+        /* Badge Notifikasi */
         .notification-badge {
             position: absolute;
             top: -2px;
             right: -2px;
-            background-color: #ff3b30; /* Merah terang */
+            background-color: #ff3b30;
             color: white;
             font-size: 10px;
             font-weight: 700;
@@ -206,42 +190,16 @@ $totalMenunggu = mysqli_fetch_assoc($q_badge)['total'] ?? 0;
         .action-wrapper { display: flex; gap: 5px; }
         .btn-icon {
             width: 32px; height: 32px; border-radius: 6px; display: flex; align-items: center; justify-content: center;
-            border: none; cursor: pointer; transition: all 0.2s; color: white; font-size: 12px;
+            border: none; cursor: pointer; transition: all 0.2s; color: white; font-size: 12px; text-decoration: none;
         }
         .btn-edit { background-color: #FFB74D; } 
         .btn-edit:hover { background-color: #ffa726; }
         .btn-delete { background-color: #ef9a9a; } 
         .btn-delete:hover { background-color: #ef5350; }
 
-        /* --- EDIT MODE --- */
-        .edit-mode { display: none; background-color: #fdfdfd; }
-        .view-mode { display: table-row; }
-        
-        .form-inline { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-        .form-inline input, .form-inline textarea {
-            width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 6px; font-size: 13px; box-sizing: border-box; font-family: inherit;
-        }
-        .form-inline textarea { grid-column: 1 / span 2; height: 60px; resize: vertical; }
-        
-        .btn-save { background-color: var(--success-color); color: white; padding: 6px 12px; border: none; border-radius: 6px; cursor: pointer; font-size: 12px; margin-right: 5px; }
-        .btn-cancel { background-color: #999; color: white; padding: 6px 12px; border: none; border-radius: 6px; cursor: pointer; font-size: 12px; }
     </style>
     <script>
         function confirmDelete() { return confirm("Yakin mau hapus menu ini?"); }
-
-        function toggleEdit(id) {
-            var viewRow = document.getElementById('view-' + id);
-            var editRow = document.getElementById('edit-' + id);
-            
-            if (viewRow.style.display === 'none') {
-                viewRow.style.display = 'table-row';
-                editRow.style.display = 'none';
-            } else {
-                viewRow.style.display = 'none';
-                editRow.style.display = 'table-row';
-            }
-        }
-
         function logoutConfirm() { return confirm("Yakin mau logout dari akun admin?"); }
     </script>
 </head>
@@ -254,7 +212,6 @@ $totalMenunggu = mysqli_fetch_assoc($q_badge)['total'] ?? 0;
         <a href="menu.php" class="nav-link active" title="Kelola Menu"><i class="fas fa-utensils"></i></a>
         <a href="tambah.php" class="nav-link" title="Tambah Menu"><i class="fas fa-plus"></i></a>
         
-        <!-- ICON PESANAN DENGAN NOTIFIKASI -->
         <a href="pesanan.php" class="nav-link" title="Kelola Pesanan">
             <i class="fas fa-receipt"></i>
             <?php if ($totalMenunggu > 0): ?>
@@ -290,7 +247,7 @@ $totalMenunggu = mysqli_fetch_assoc($q_badge)['total'] ?? 0;
                 while ($row = mysqli_fetch_assoc($menu)):
                 ?>
                 
-                <tr id="view-<?= $row['id_menu']; ?>" class="view-mode">
+                <tr>
                     <td><?= $no++; ?></td>
                     <td>
                         <?php if (!empty($row['foto'])): ?>
@@ -302,7 +259,9 @@ $totalMenunggu = mysqli_fetch_assoc($q_badge)['total'] ?? 0;
                     <td>
                         <div style="font-weight: 600; margin-bottom: 3px;"><?= htmlspecialchars($row['nama_menu']); ?></div>
                         <span class="badge badge-cat"><?= htmlspecialchars($row['kategori']); ?></span>
-                        <span class="badge badge-star">⭐ <?= number_format($row['rating_rata'], 1); ?></span>
+                        <?php if(isset($row['rating_rata'])): ?>
+                            <span class="badge badge-star">⭐ <?= number_format($row['rating_rata'], 1); ?></span>
+                        <?php endif; ?>
                     </td>
                     <td>
                         <div style="font-size: 13px; color: #666; line-height: 1.4;">
@@ -312,44 +271,17 @@ $totalMenunggu = mysqli_fetch_assoc($q_badge)['total'] ?? 0;
                     <td class="price">Rp<?= number_format($row['harga'], 0, ',', '.'); ?></td>
                     <td>
                         <div class="action-wrapper">
-                            <button onclick="toggleEdit(<?= $row['id_menu']; ?>)" class="btn-icon btn-edit" title="Edit">
+                            <a href="edit.php?id=<?= $row['id_menu']; ?>" class="btn-icon btn-edit" title="Edit">
                                 <i class="fas fa-pen"></i>
-                            </button>
+                            </a>
+                            
                             <a href="menu.php?hapus=<?= $row['id_menu']; ?>" onclick="return confirmDelete()" class="btn-icon btn-delete" title="Hapus">
                                 <i class="fas fa-trash"></i>
                             </a>
                         </div>
                     </td>
                 </tr>
-
-                <tr id="edit-<?= $row['id_menu']; ?>" class="edit-mode">
-                    <td colspan="6">
-                        <form method="POST" enctype="multipart/form-data" style="padding: 15px; background: #fdfdfd; border-radius: 8px;">
-                            <input type="hidden" name="id_menu" value="<?= $row['id_menu']; ?>">
-                            
-                            <div style="display: flex; gap: 20px; align-items: start;">
-                                <div style="width: 120px; flex-shrink: 0;">
-                                    <small style="display:block; margin-bottom:5px; color: #666;">Ganti Foto</small>
-                                    <input type="file" name="foto" style="font-size: 11px; width: 100%;">
-                                </div>
-
-                                <div style="flex-grow: 1;">
-                                    <div class="form-inline">
-                                        <input type="text" name="nama_menu" value="<?= htmlspecialchars($row['nama_menu']); ?>" placeholder="Nama Menu" required>
-                                        <input type="text" name="kategori" value="<?= htmlspecialchars($row['kategori']); ?>" placeholder="Kategori" required>
-                                        <input type="number" name="harga" value="<?= htmlspecialchars($row['harga']); ?>" placeholder="Harga" required>
-                                        <textarea name="deskripsi" placeholder="Deskripsi Menu" required><?= htmlspecialchars($row['deskripsi']); ?></textarea>
-                                    </div>
-                                    <div style="margin-top: 10px; text-align: right;">
-                                        <button type="button" onclick="toggleEdit(<?= $row['id_menu']; ?>)" class="btn-cancel">Batal</button>
-                                        <button type="submit" name="edit" class="btn-save"><i class="fas fa-save"></i> Simpan</button>
-                                    </div>
-                                </div>
-                            </div>
-                        </form>
-                    </td>
-                </tr>
-
+                
                 <?php endwhile; ?>
             </tbody>
         </table>
