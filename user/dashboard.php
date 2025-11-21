@@ -446,6 +446,7 @@ $popular = mysqli_query($conn, $popular_query);
                 </div>
             </div>
         </div>
+        
 
         <h2>Pilih Kategori</h2>
         <div class="category-list">
