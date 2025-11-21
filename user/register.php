@@ -108,7 +108,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         .login-btn {
             width: 100%;
             padding: 12px;
-            background-color: black; 
+            background-color: #ffa07a; 
             color: white;
             border: none;
             border-radius: 8px;
