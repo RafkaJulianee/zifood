@@ -1,0 +1,64 @@
+    /* --- CSS GLOBAL --- */
+        :root { --primary-color: #FF5722; --bg-light: #f7f7f7; --sidebar-width: 80px; }
+        body { margin: 0; font-family: 'Poppins', sans-serif; background-color: var(--bg-light); min-height: 100vh; }
+        .dashboard-layout { display: grid; grid-template-columns: var(--sidebar-width) 1fr 300px; min-height: 100vh; background-color: white; }
+        
+        /* SIDEBAR */
+        .sidebar { background-color: white; border-right: 1px solid #eee; padding: 20px 0; display: flex; flex-direction: column; align-items: center; }
+                .logo {
+    margin-bottom: 40px;
+    /* Hapus color dan font-size, karena tidak berpengaruh pada gambar */
+    display: flex;
+    justify-content: center; /* Agar logo berada tepat di tengah sidebar */
+}
+
+/* Tambahkan style baru khusus untuk gambarnya */
+.logo img {
+    width: 50px; /* Sesuaikan ukuran ini agar pas (Sidebar Anda lebarnya 80px) */
+    height: auto; /* Agar gambar tetap proporsional */
+    object-fit: contain;
+    border-radius: 50px;
+}
+        .nav-link { display: block; padding: 15px 0; margin: 5px 0; text-align: center; color: #999; font-size: 20px; width: 100%; position: relative; text-decoration: none; }
+        .nav-link:hover, .nav-link.active { color: var(--primary-color); background-color: #ffece6; border-left: 3px solid var(--primary-color); }
+        .notification-badge { position: absolute; top: 8px; right: 15px; background-color: red; color: white; font-size: 10px; padding: 2px 5px; border-radius: 50%; }
+
+        /* CONTENT */
+        .main-content { padding: 30px; overflow-y: auto; background-color: white; }
+        .header { border-bottom: 1px solid #eee; padding-bottom: 15px; margin-bottom: 20px; }
+        h2 { font-size: 24px; font-weight: 700; margin: 0; color: #333; }
+
+        /* NOTIF LIST */
+        .notif-list { list-style: none; padding: 0; margin: 0; max-width: 800px; margin: 0 auto; }
+        .notif-item { display: flex; align-items: flex-start; padding: 20px; border: 1px solid #eee; border-radius: 12px; margin-bottom: 15px; background-color: #fff; box-shadow: 0 2px 5px rgba(0,0,0,0.02); }
+        .notif-img { width: 60px; height: 60px; border-radius: 10px; object-fit: cover; margin-right: 20px; border: 1px solid #f0f0f0; }
+        .notif-content { flex-grow: 1; }
+        .notif-message { font-size: 15px; font-weight: 500; color: #333; line-height: 1.5; margin-bottom: 5px; }
+        .notif-time { font-size: 12px; color: #999; }
+
+        /* RATING BOX */
+        .rating-box { 
+            background-color: #fff8f5; border: 1px dashed var(--primary-color); 
+            padding: 15px; border-radius: 8px; margin-top: 15px; text-align: center;
+            animation: fadeIn 0.5s ease;
+        }
+        @keyframes fadeIn { from { opacity:0; transform:translateY(-10px); } to { opacity:1; transform:translateY(0); } }
+        .rating-label { display: block; font-weight: 600; font-size: 14px; color: var(--primary-color); margin-bottom: 10px; }
+        .rating-stars { display: inline-block; margin-bottom: 10px; }
+        .star-btn { background: none; border: none; color: #ddd; font-size: 28px; cursor: pointer; transition: 0.2s; padding: 0 5px; }
+        .star-btn:hover, .star-btn.rated { color: #ffc107; transform: scale(1.1); }
+        .btn-rate-submit { 
+            background-color: var(--primary-color); color: white; padding: 10px 25px; 
+            border: none; border-radius: 25px; font-weight: 600; cursor: pointer; 
+            font-size: 14px; transition: 0.2s; box-shadow: 0 4px 10px rgba(255,87,34,0.2);
+        }
+        .btn-rate-submit:disabled { background-color: #ddd; cursor: not-allowed; box-shadow: none; color: #888; }
+        .btn-rate-submit:hover:not(:disabled) { background-color: #e64a19; }
+
+        /* RIGHT SIDEBAR */
+        .right-sidebar { background-color: var(--bg-light); border-left: 1px solid #eee; padding: 30px 20px; overflow-y: auto; }
+        .popular-item { display: flex; align-items: center; margin-bottom: 15px; border-bottom: 1px dashed #ddd; padding-bottom: 15px; }
+        .pop-img { width: 50px; height: 50px; border-radius: 8px; object-fit: cover; margin-right: 10px; }
+        .pop-details strong { display: block; font-size: 13px; }
+        .pop-rating { font-size: 11px; color: var(--primary-color); }
+        .add-btn { display: block; width: 100%; padding: 10px; background: var(--primary-color); color: white; text-align: center; border-radius: 6px; text-decoration: none; margin-top: 20px; font-weight: 500; }
