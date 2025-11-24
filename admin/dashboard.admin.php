@@ -108,35 +108,26 @@ if (isset($_GET['logout'])) {
         
         <div class="header">
             <h1>Hello, <?= $_SESSION['username_admin']; ?>!</h1>
-            <div class="user-greeting">This is what's happening in your store this month.</div>
         </div>
 
         <div class="kpi-card revenue">
-            <h3>Total Revenue (Pendapatan)</h3>
-            <div class="kpi-value">Rp<?= number_format($pendapatan, 0, ',', '.'); ?></div>
-            <div class="kpi-footer">
-                <span class="trend" style="color: var(--card-green);">+5.6%</span> This month vs last
-            </div>
+            <h3>Total Pendapatan</h3>
+            <div class="kpi-value">Rp <?= number_format($pendapatan, 0, ',', '.'); ?></div>
+          
         </div>
         
         <div class="kpi-card">
-            <h3>Total Orders (Pesanan)</h3>
+            <h3>Total Pesanan</h3>
             <div class="kpi-value"><?= $totalPesanan; ?></div>
-            <div class="kpi-footer">
-                <span style="color: var(--card-red); font-weight: 600;">-2.4%</span> This month vs last
-            </div>
         </div>
         
         <div class="kpi-card">
-            <h3>Total Menu (Visitors)</h3>
+            <h3>Total Menu</h3>
             <div class="kpi-value"><?= $totalMenu; ?></div>
-            <div class="kpi-footer">
-                <span style="color: var(--card-green); font-weight: 600;">+3.1%</span> Items in stock
-            </div>
         </div>
         
         <div class="chart-card">
-            <h3>Revenue Chart (Pendapatan Harian)</h3>
+            <h3>Pendapatan Harian</h3>
             <canvas id="pendapatanChart" style="max-height: 250px;"></canvas>
         </div>
 
@@ -146,7 +137,8 @@ if (isset($_GET['logout'])) {
                 <h3>Pesanan Terbaru</h3>
                 <div class="order-summary-kpi" style="background-color: var(--bg-light); padding: 15px; border-radius: 8px; margin-bottom: 15px; text-align: center;">
                     <div style="font-size: 24px; font-weight: 700; color: var(--theme-primary);"><?= $totalMenunggu; ?></div>
-                    <small style="color: #666;">Orders awaiting confirmation</small>
+                    <small style="color: #666;">
+                    Pesanan menunggu konfirmasi</small>
                 </div>
 
                 <?php if (mysqli_num_rows($pesananBaru) > 0): ?>
@@ -159,11 +151,11 @@ if (isset($_GET['logout'])) {
                 <?php else: ?>
                     <p style="font-size: 12px; color: #999;">Belum ada pesanan terbaru.</p>
                 <?php endif; ?>
-                <a href="pesanan.php" style="display: block; text-align: center; margin-top: 15px; color: var(--theme-primary); text-decoration: none;">Lihat Semua Pesanan →</a>
+                <a href="pesanan.php" style="display: block; text-align: center; margin-top: 15px; color: var(--theme-primary); text-decoration: none;">Lihat Semua Pesanan</a>
             </div>
 
             <div class="sales-by-category">
-                <h3>Top Menu Items (Rating)</h3>
+                <h3>Menu dengan Rating Tertinggi</h3>
                     <?php if (mysqli_num_rows($menuTop) > 0): ?>
                         <ol style="padding-left: 20px; margin: 0;">
                         <?php while ($m = mysqli_fetch_assoc($menuTop)): ?>
