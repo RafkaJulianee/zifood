@@ -2,11 +2,24 @@
 session_start();
 include '../koneksi.php';
 
-// Cek apakah admin sudah login
+// --- 1. LOGIKA LOGOUT (DIPINDAHKAN KE SINI) ---
+// Pengecekan logout harus dilakukan sebelum output HTML apa pun
+if (isset($_GET['logout'])) {
+    session_destroy();
+    unset($_SESSION);
+    // PERHATIAN: Cek apakah file login ada di folder yang sama ('login.php') 
+    // atau di folder luar ('../index.php'). Sesuaikan jika perlu.
+    header("Location: ../index.php"); 
+    exit;
+}
+
+// --- 2. CEK SESI LOGIN ---
 if (!isset($_SESSION['id_admin'])) {
     header("Location:../index.php");
     exit;
 }
+
+// --- 3. QUERY DATA DASHBOARD ---
 
 // Ambil data total menu
 $totalMenu = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) AS total FROM menu"))['total'];
@@ -53,12 +66,6 @@ while ($data = mysqli_fetch_assoc($grafikPendapatanResult)) {
 
 $jsonHari = json_encode($dataHari);
 $jsonPendapatan = json_encode($dataPendapatan);
-
-if (isset($_GET['logout'])) {
-    session_destroy(); 
-    header("Location: login.php");
-    exit;
-}
 ?>
 
 <!DOCTYPE html>
@@ -93,7 +100,6 @@ if (isset($_GET['logout'])) {
         <a href="menu.php" class="nav-link" title="Kelola Menu"><i class="fas fa-utensils"></i></a>
         <a href="tambah.php" class="nav-link" title="Tambah Menu"><i class="fas fa-plus"></i></a>
         
-        <!-- NAVBAR PESANAN DENGAN BADGE -->
         <a href="pesanan.php" class="nav-link" title="Kelola Pesanan">
             <i class="fas fa-receipt"></i>
             <?php if ($totalMenunggu > 0): ?>

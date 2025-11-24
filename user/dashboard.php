@@ -2,9 +2,21 @@
 session_start();
 include '../koneksi.php';
 
-// Cek login
+// ==========================================================
+// 1. LOGIKA LOGOUT (INTEGRASI LANGSUNG)
+// ==========================================================
+if (isset($_GET['logout'])) {
+    session_destroy();    // Hapus semua data sesi
+    unset($_SESSION);     // Pastikan variabel sesi hilang dari memori
+    header("Location: ../index.php"); // Kembali ke halaman login/index utama
+    exit;
+}
+
+// ==========================================================
+// 2. CEK LOGIN
+// ==========================================================
 if (!isset($_SESSION['id_user'])) {
-    header("Location: index.php");
+    header("Location:../index.php");
     exit;
 }
 
@@ -14,13 +26,10 @@ $id_pengguna = $_SESSION['id_user'];
 $data_pengguna = mysqli_fetch_assoc(mysqli_query($conn, "SELECT nama FROM users WHERE id_user='$id_pengguna'"));
 
 // ==========================================================
-// FIX: LOGIKA MENGHITUNG NOTIFIKASI BELUM DIBACA
+// LOGIKA MENGHITUNG NOTIFIKASI BELUM DIBACA
 // ==========================================================
-// Kita pakai awalan 'query_' agar tahu ini adalah teks perintah SQL
 $query_notif = "SELECT COUNT(*) AS total FROM notifikasi WHERE id_user='$id_pengguna' AND status_baca='Belum'";
-// Kita pakai awalan 'total_' untuk hasil hitungan
 $total_notif = mysqli_fetch_assoc(mysqli_query($conn, $query_notif))['total'] ?? 0;
-// ==========================================================
 
 // Ambil kategori untuk filter dropdown
 $hasil_kategori = mysqli_query($conn, "SELECT DISTINCT kategori FROM menu");
@@ -30,7 +39,6 @@ $cari_menu = $_GET['cari'] ?? '';
 $filter_kategori = $_GET['kategori'] ?? '';
 
 // Query menu berdasarkan pencarian dan filter
-// Kita namakan 'query_menu' supaya spesifik, bukan cuma 'query'
 $query_menu = "SELECT * FROM menu WHERE 1=1";
 
 if (!empty($cari_menu)) {
@@ -88,7 +96,7 @@ $hasil_populer = mysqli_query($conn, $query_populer);
             <?php endif; ?>
         </a>
         
-        <a href="logout.php" class="nav-link" onclick="return konfirmasiLogout()" title="Logout"><i class="fas fa-sign-out-alt"></i></a>
+        <a href="?logout=true" class="nav-link" onclick="return konfirmasiLogout()" title="Logout"><i class="fas fa-sign-out-alt"></i></a>
     </div>
 
     <div class="main-content">
@@ -106,9 +114,7 @@ $hasil_populer = mysqli_query($conn, $query_populer);
                 <span>Halo, <strong><?= htmlspecialchars($data_pengguna['nama'] ?? $_SESSION['username']); ?></strong>!</span>
                 <div class="user-avatar">
                     <?php
-                        // Ambil nama, jika tidak ada, pakai 'U' (User) sebagai default
                         $nama = $data_pengguna['nama'] ?? $_SESSION['username'] ?? 'U';
-                        // Ambil huruf pertama dan ubah jadi Kapital
                         echo htmlspecialchars(strtoupper($nama[0]));
                     ?>
                 </div>
