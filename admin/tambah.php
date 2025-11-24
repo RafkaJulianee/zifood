@@ -2,6 +2,20 @@
 session_start();
 include '../koneksi.php';
 
+// ==========================================================
+// 1. FIX: LOGIKA LOGOUT (Letakkan Paling Atas)
+// ==========================================================
+if (isset($_GET['logout'])) {
+    session_destroy();    // Hapus sesi
+    unset($_SESSION);     // Bersihkan variabel
+    // Redirect ke halaman login
+    header("Location: login.php"); 
+    exit;
+}
+
+// ==========================================================
+// 2. CEK LOGIN ADMIN
+// ==========================================================
 if (!isset($_SESSION['id_admin'])) {
     header("Location: ../index.php");
     exit;
@@ -24,7 +38,7 @@ if (isset($_POST['tambah'])) {
     // Query INSERT data menu
     $query_insert = "INSERT INTO menu (nama_menu, kategori, harga, deskripsi, foto) 
                      VALUES ('$nama', '$kategori', '$harga', '$deskripsi', '$foto')";
-                     
+                      
     mysqli_query($conn, $query_insert);
     echo "<script>alert('Menu berhasil ditambahkan!'); window.location='menu.php';</script>";
 }
@@ -130,7 +144,6 @@ $totalMenunggu = mysqli_fetch_assoc($q_badge)['total'] ?? 0;
         
         <a href="tambah.php" class="nav-link active" title="Tambah Menu"><i class="fas fa-plus"></i></a>
         
-        <!-- LINK PESANAN DENGAN BADGE MERAH -->
         <a href="pesanan.php" class="nav-link" title="Kelola Pesanan">
             <i class="fas fa-receipt"></i>
             <?php if ($totalMenunggu > 0): ?>
@@ -138,7 +151,7 @@ $totalMenunggu = mysqli_fetch_assoc($q_badge)['total'] ?? 0;
             <?php endif; ?>
         </a>
         
-        <a href="logout.php" class="nav-link" onclick="return logoutConfirm()" title="Logout"><i class="fas fa-sign-out-alt"></i></a>
+        <a href="?logout=true" class="nav-link" onclick="return logoutConfirm()" title="Logout"><i class="fas fa-sign-out-alt"></i></a>
     </div>
 
     <div class="form-content">
