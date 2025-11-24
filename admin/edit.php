@@ -2,13 +2,26 @@
 session_start();
 include '../koneksi.php';
 
-// 1. Cek Login
+// ==========================================================
+// 1. FIX: LOGIKA LOGOUT (INTEGRASI LANGSUNG)
+// ==========================================================
+if (isset($_GET['logout'])) {
+    session_destroy();    // Hapus sesi
+    unset($_SESSION);     // Bersihkan variabel
+    // Arahkan ke halaman login (sesuaikan jika file login ada di folder luar, misal '../index.php')
+    header("Location: ../index.php"); 
+    exit;
+}
+
+// ==========================================================
+// 2. CEK LOGIN ADMIN
+// ==========================================================
 if (!isset($_SESSION['id_admin'])) {
     header("Location: ../index.php");
     exit;
 }
 
-// 2. Cek ID di URL
+// 3. Cek ID di URL
 if (!isset($_GET['id'])) {
     header("Location: menu.php");
     exit;
@@ -16,7 +29,7 @@ if (!isset($_GET['id'])) {
 
 $id = $_GET['id'];
 
-// 3. Ambil Data Lama
+// 4. Ambil Data Lama
 $query = mysqli_query($conn, "SELECT * FROM menu WHERE id_menu = '$id'");
 $data = mysqli_fetch_assoc($query);
 
@@ -25,7 +38,7 @@ if (!$data) {
     exit;
 }
 
-// 4. Proses Update Data
+// 5. Proses Update Data
 if (isset($_POST['update'])) {
     $nama = mysqli_real_escape_string($conn, $_POST['nama_menu']);
     $kategori = mysqli_real_escape_string($conn, $_POST['kategori']);
@@ -50,7 +63,7 @@ if (isset($_POST['update'])) {
     }
 }
 
-// 5. Hitung Badge Notifikasi
+// 6. Hitung Badge Notifikasi
 $q_badge = mysqli_query($conn, "SELECT COUNT(*) AS total FROM pesanan WHERE status='Menunggu'");
 $totalMenunggu = mysqli_fetch_assoc($q_badge)['total'] ?? 0;
 ?>
@@ -69,7 +82,7 @@ $totalMenunggu = mysqli_fetch_assoc($q_badge)['total'] ?? 0;
     </style>
 
     <script>
-        // Validasi Harga (Sama seperti tambah.php)
+        // Validasi Harga
         function validateForm() {
             const harga = document.forms["menuForm"]["harga"].value;
             if (isNaN(harga) || harga <= 0) {
@@ -81,7 +94,7 @@ $totalMenunggu = mysqli_fetch_assoc($q_badge)['total'] ?? 0;
 
         function logoutConfirm() { return confirm("Yakin mau logout?"); }
 
-        // --- LOGIKA PREVIEW (Sedikit berbeda agar support data lama) ---
+        // --- LOGIKA PREVIEW ---
         document.addEventListener('DOMContentLoaded', function() {
             const namaInput = document.getElementById('nama_menu_input');
             const kategoriInput = document.getElementById('kategori_input');
@@ -113,7 +126,7 @@ $totalMenunggu = mysqli_fetch_assoc($q_badge)['total'] ?? 0;
                 previewDeskripsi.innerText = valDesk;
             }
 
-            // Fungsi Preview Gambar (Mendukung file baru upload)
+            // Fungsi Preview Gambar
             function previewImage(event) {
                 const file = event.target.files[0];
                 if (file) {
@@ -134,15 +147,14 @@ $totalMenunggu = mysqli_fetch_assoc($q_badge)['total'] ?? 0;
             deskripsiInput.addEventListener('input', updateSummary);
             fotoInput.addEventListener('change', previewImage);
 
-            // INIT: Jalankan sekali saat loading agar preview terisi data database
-            // Jika foto dari DB ada, set sebagai background preview
+            // INIT: Load data lama ke preview
             const fotoLama = "<?= $data['foto']; ?>";
             if (fotoLama && fotoLama !== "") {
                 previewImg.style.backgroundImage = "url('../assets/img/" + fotoLama + "')";
                 previewImg.innerHTML = '';
                 previewImg.style.border = 'none';
             }
-            updateSummary(); // Panggil manual agar format rupiah tampil benar di awal
+            updateSummary(); 
         });
     </script>
 </head>
@@ -161,7 +173,8 @@ $totalMenunggu = mysqli_fetch_assoc($q_badge)['total'] ?? 0;
                 <span class="notification-badge"><?= $totalMenunggu; ?></span>
             <?php endif; ?>
         </a>
-        <a href="logout.php" class="nav-link" onclick="return logoutConfirm()"><i class="fas fa-sign-out-alt"></i></a>
+        
+        <a href="?logout=true" class="nav-link" onclick="return logoutConfirm()"><i class="fas fa-sign-out-alt"></i></a>
     </div>
 
     <div class="form-content">
@@ -195,7 +208,7 @@ $totalMenunggu = mysqli_fetch_assoc($q_badge)['total'] ?? 0;
                                value="<?= htmlspecialchars($data['harga']); ?>" required>
                     </div>
                     <div class="form-control">
-                        <label>Ganti Foto (Opsional)</label>
+                        <label>Ganti Foto</label>
                         <input type="file" name="foto" id="foto_input">
                     </div>
                 </div>

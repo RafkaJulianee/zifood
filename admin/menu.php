@@ -2,32 +2,50 @@
 session_start();
 include '../koneksi.php';
 
-// Cek apakah admin sudah login
+// ==========================================================
+// 1. FIX: LOGIKA LOGOUT (Letakkan Paling Atas)
+// ==========================================================
+if (isset($_GET['logout'])) {
+    session_destroy();    // Hapus sesi
+    unset($_SESSION);     // Bersihkan variabel
+    // Redirect ke halaman login (sesuaikan jika filenya 'login.php' atau '../index.php')
+    header("Location: ../index.php"); 
+    exit;
+}
+
+// ==========================================================
+// 2. CEK LOGIN ADMIN
+// ==========================================================
 if (!isset($_SESSION['id_admin'])) {
     header("Location: ../index.php");
     exit;
 }
 
-// ========== LOGIKA DELETE (Tetap di sini) ==========
-// Fitur hapus biasanya tetap di halaman list atau dibuat file aksi terpisah. 
-// Untuk saat ini kita biarkan di sini agar praktis.
+// ==========================================================
+// 3. LOGIKA DELETE
+// ==========================================================
 if (isset($_GET['hapus'])) {
     $id = $_GET['hapus'];
     
-    // Opsional: Ambil nama foto dulu jika ingin menghapus file fisik foto dari folder
+    // Opsional: Hapus file fisik foto jika perlu
     // $q_foto = mysqli_query($conn, "SELECT foto FROM menu WHERE id_menu='$id'");
     // $d_foto = mysqli_fetch_assoc($q_foto);
     // if ($d_foto['foto']) { unlink("../assets/img/" . $d_foto['foto']); }
 
-    mysqli_query($conn, "DELETE FROM menu WHERE id_menu='$id'");
-    echo "<script>alert('Menu berhasil dihapus!'); window.location='menu.php';</script>";
+    $delete = mysqli_query($conn, "DELETE FROM menu WHERE id_menu='$id'");
+    
+    if ($delete) {
+        echo "<script>alert('Menu berhasil dihapus!'); window.location='menu.php';</script>";
+    } else {
+        echo "<script>alert('Gagal menghapus menu!'); window.location='menu.php';</script>";
+    }
 }
 
 // Ambil data menu untuk ditampilkan
 $menu = mysqli_query($conn, "SELECT * FROM menu ORDER BY id_menu DESC");
 
 // ==========================================================
-// HITUNG BADGE PESANAN (Untuk Sidebar)
+// 4. HITUNG BADGE PESANAN (Untuk Sidebar)
 // ==========================================================
 $q_badge = mysqli_query($conn, "SELECT COUNT(*) AS total FROM pesanan WHERE status='Menunggu'");
 $totalMenunggu = mysqli_fetch_assoc($q_badge)['total'] ?? 0;
@@ -43,7 +61,7 @@ $totalMenunggu = mysqli_fetch_assoc($q_badge)['total'] ?? 0;
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <style>
-       
+        
 
     </style>
     <script>
@@ -67,7 +85,7 @@ $totalMenunggu = mysqli_fetch_assoc($q_badge)['total'] ?? 0;
             <?php endif; ?>
         </a>
         
-        <a href="logout.php" class="nav-link" onclick="return logoutConfirm()" title="Logout"><i class="fas fa-sign-out-alt"></i></a>
+        <a href="?logout=true" class="nav-link" onclick="return logoutConfirm()" title="Logout"><i class="fas fa-sign-out-alt"></i></a>
     </div>
 
     <div class="main-content">

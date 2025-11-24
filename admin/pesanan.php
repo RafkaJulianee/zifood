@@ -2,7 +2,20 @@
 session_start();
 include '../koneksi.php';
 
-// Cek apakah admin sudah login
+// ==========================================================
+// 1. FIX: LOGIKA LOGOUT (Letakkan Paling Atas)
+// ==========================================================
+if (isset($_GET['logout'])) {
+    session_destroy();    // Hapus sesi
+    unset($_SESSION);     // Bersihkan variabel
+    // Redirect ke halaman login
+    header("Location: login.php"); 
+    exit;
+}
+
+// ==========================================================
+// 2. CEK LOGIN ADMIN
+// ==========================================================
 if (!isset($_SESSION['id_admin'])) {
     header("Location: ../index.php");
     exit;
@@ -19,7 +32,7 @@ if (isset($_POST['update_status'])) {
     $new_status = mysqli_real_escape_string($conn, $_POST['status']);
     $id_user_for_notif = mysqli_real_escape_string($conn, $_POST['id_user_for_notif']);
     
-    // [PERUBAHAN] Izinkan 'Dine-in' diubah menjadi 'Selesai'
+    // Izinkan 'Dine-in' diubah menjadi 'Selesai'
     $allowed_statuses = ['Dikonfirmasi', 'Ditolak', 'Selesai'];
 
     if (in_array($new_status, $allowed_statuses)) {
@@ -38,7 +51,6 @@ if (isset($_POST['update_status'])) {
             } elseif ($new_status === 'Ditolak') {
                 $pesan = "Pesanan Anda (ID #$id_pesanan) sayangnya ditolak.";
             } elseif ($new_status === 'Selesai') {
-                // Cek apakah notif 'selesai' sudah ada
                 $pesan = "Pesanan Anda (ID #$id_pesanan) telah selesai. Terima kasih!";
             }
 
@@ -61,7 +73,7 @@ if (isset($_POST['update_status'])) {
 // ===========================================
 $where_clause = ($current_status !== 'All') ? "WHERE p.status = '$current_status'" : "";
 
-// [PERUBAHAN] Mengganti p.nomor_meja menjadi p.meja AS nomor_meja
+// Mengganti p.nomor_meja menjadi p.meja AS nomor_meja
 $query_pesanan = "
     SELECT 
         p.id_pesanan, 
@@ -91,9 +103,8 @@ $query_pesanan = "
 $result_pesanan = mysqli_query($conn, $query_pesanan);
 
 // Hitung jumlah untuk Tab & Badge Notifikasi
-// [PERUBAHAN] Menambahkan status 'Dine-in' ke perhitungan
 $count_query = mysqli_query($conn, "SELECT status, COUNT(*) as count FROM pesanan GROUP BY status WITH ROLLUP");
-$status_counts = ['All' => 0, 'Menunggu' => 0, 'Dikonfirmasi' => 0, 'Ditolak' => 0, 'Selesai' => 0, 'Dine-in' => 0]; // Tambah Dine-in
+$status_counts = ['All' => 0, 'Menunggu' => 0, 'Dikonfirmasi' => 0, 'Ditolak' => 0, 'Selesai' => 0, 'Dine-in' => 0]; 
 while ($row = mysqli_fetch_assoc($count_query)) {
     if ($row['status'] === NULL) {
         $status_counts['All'] = $row['count'];
@@ -173,7 +184,6 @@ $totalMenunggu = $status_counts['Menunggu'];
         <a href="menu.php" class="nav-link" title="Kelola Menu"><i class="fas fa-utensils"></i></a>
         <a href="tambah.php" class="nav-link" title="Tambah Menu"><i class="fas fa-plus"></i></a>
         
-        <!-- LINK PESANAN DENGAN BADGE MERAH -->
         <a href="pesanan.php" class="nav-link active" title="Kelola Pesanan">
             <i class="fas fa-receipt"></i>
             <?php if ($totalMenunggu > 0): ?>
@@ -181,7 +191,7 @@ $totalMenunggu = $status_counts['Menunggu'];
             <?php endif; ?>
         </a>
         
-        <a href="logout.php" class="nav-link" onclick="return logoutConfirm()" title="Logout"><i class="fas fa-sign-out-alt"></i></a>
+        <a href="?logout=true" class="nav-link" onclick="return logoutConfirm()" title="Logout"><i class="fas fa-sign-out-alt"></i></a>
     </div>
 
     <div class="main-content">
@@ -193,10 +203,9 @@ $totalMenunggu = $status_counts['Menunggu'];
 
         <div class="tabs">
             <?php 
-            // [PERUBAHAN] Menambahkan 'Dine-in' ke daftar tab
             $statuses = ['All', 'Menunggu', 'Dikonfirmasi', 'Dine-in', 'Ditolak', 'Selesai'];
             foreach ($statuses as $status): 
-                if (isset($status_counts[$status])): // Hanya tampilkan jika ada datanya
+                if (isset($status_counts[$status])): 
             ?>
                 <button class="tab-button <?= $current_status === $status ? 'active' : ''; ?>" onclick="filterStatus('<?= $status; ?>')">
                     <?= $status; ?> <span style="font-size: 11px; background: #eee; padding: 2px 6px; border-radius: 10px; margin-left: 5px;"><?= $status_counts[$status]; ?></span>
