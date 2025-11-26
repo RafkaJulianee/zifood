@@ -3,12 +3,11 @@ session_start();
 include '../koneksi.php';
 
 // ==========================================================
-// 1. FIX: LOGIKA LOGOUT (Letakkan Paling Atas)
+// 1. LOGIKA LOGOUT
 // ==========================================================
 if (isset($_GET['logout'])) {
-    session_destroy();    // Hapus sesi
-    unset($_SESSION);     // Bersihkan variabel
-    // Redirect ke halaman login
+    session_destroy();
+    unset($_SESSION);
     header("Location: login.php"); 
     exit;
 }
@@ -32,28 +31,23 @@ if (isset($_POST['update_status'])) {
     $new_status = mysqli_real_escape_string($conn, $_POST['status']);
     $id_user_for_notif = mysqli_real_escape_string($conn, $_POST['id_user_for_notif']);
     
-    // Izinkan 'Dine-in' diubah menjadi 'Selesai'
+    // Status yang diperbolehkan
     $allowed_statuses = ['Dikonfirmasi', 'Ditolak', 'Selesai'];
 
     if (in_array($new_status, $allowed_statuses)) {
         
-        // Khusus untuk 'Dine-in', pastikan perubahannya hanya ke 'Selesai'
-        if ($new_status === 'Selesai') {
-             $pesan = "Pesanan Anda (ID #$id_pesanan) telah selesai. Terima kasih!";
+        $pesan = "";
+        if ($new_status === 'Dikonfirmasi') {
+            $pesan = "Pesanan Anda (ID #$id_pesanan) telah dikonfirmasi dan sedang diproses.";
+        } elseif ($new_status === 'Ditolak') {
+            $pesan = "Pesanan Anda (ID #$id_pesanan) sayangnya ditolak.";
+        } elseif ($new_status === 'Selesai') {
+            $pesan = "Pesanan Anda (ID #$id_pesanan) telah selesai. Terima kasih!";
         }
 
         $query_update = "UPDATE pesanan SET status='$new_status' WHERE id_pesanan='$id_pesanan'";
         
         if (mysqli_query($conn, $query_update)) {
-            $pesan = "";
-            if ($new_status === 'Dikonfirmasi') {
-                $pesan = "Pesanan Anda (ID #$id_pesanan) telah dikonfirmasi dan sedang diproses.";
-            } elseif ($new_status === 'Ditolak') {
-                $pesan = "Pesanan Anda (ID #$id_pesanan) sayangnya ditolak.";
-            } elseif ($new_status === 'Selesai') {
-                $pesan = "Pesanan Anda (ID #$id_pesanan) telah selesai. Terima kasih!";
-            }
-
             // INSERT NOTIFIKASI
             if (!empty($pesan)) {
                 $query_notif = "INSERT INTO notifikasi (id_user, id_pesanan, pesan, status_baca) 
@@ -69,11 +63,19 @@ if (isset($_POST['update_status'])) {
 }
 
 // ===========================================
-// AMBIL DATA PESANAN
+// LOGIKA FILTER STATUS (WHERE CLAUSE)
 // ===========================================
-$where_clause = ($current_status !== 'All') ? "WHERE p.status = '$current_status'" : "";
+if ($current_status === 'Dine-in') {
+    // Jika tab Dine-in, cari berdasarkan metode bayar
+    $where_clause = "WHERE p.metode = 'Bayar di Kasir'"; 
+} elseif ($current_status !== 'All') {
+    // Jika tab status biasa (Menunggu, Selesai, dll)
+    $where_clause = "WHERE p.status = '$current_status'";
+} else {
+    // All
+    $where_clause = "";
+}
 
-// Mengganti p.nomor_meja menjadi p.meja AS nomor_meja
 $query_pesanan = "
     SELECT 
         p.id_pesanan, 
@@ -102,19 +104,30 @@ $query_pesanan = "
 
 $result_pesanan = mysqli_query($conn, $query_pesanan);
 
-// Hitung jumlah untuk Tab & Badge Notifikasi
-$count_query = mysqli_query($conn, "SELECT status, COUNT(*) as count FROM pesanan GROUP BY status WITH ROLLUP");
-$status_counts = ['All' => 0, 'Menunggu' => 0, 'Dikonfirmasi' => 0, 'Ditolak' => 0, 'Selesai' => 0, 'Dine-in' => 0]; 
+// ===========================================
+// HITUNG JUMLAH (BADGE)
+// ===========================================
+// 1. Hitung status normal
+$count_query = mysqli_query($conn, "SELECT status, COUNT(*) as count FROM pesanan GROUP BY status");
+$status_counts = ['All' => 0, 'Menunggu' => 0, 'Dikonfirmasi' => 0, 'Ditolak' => 0, 'Selesai' => 0, 'Dine-in' => 0];
+
+// Total Semua
+$total_all = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as total FROM pesanan"))['total'];
+$status_counts['All'] = $total_all;
+
 while ($row = mysqli_fetch_assoc($count_query)) {
-    if ($row['status'] === NULL) {
-        $status_counts['All'] = $row['count'];
-    } elseif (isset($status_counts[$row['status']])) {
+    if (isset($status_counts[$row['status']])) {
         $status_counts[$row['status']] = $row['count'];
     }
 }
 
+// 2. Hitung khusus Dine-in (Berdasarkan Metode)
+$dine_in_query = mysqli_query($conn, "SELECT COUNT(*) as total FROM pesanan WHERE metode = 'Bayar di Kasir'");
+$dine_in_count = mysqli_fetch_assoc($dine_in_query)['total'];
+$status_counts['Dine-in'] = $dine_in_count;
+
 // Variabel untuk badge merah di sidebar
-$totalMenunggu = $status_counts['Menunggu'];
+$totalMenunggu = $status_counts['Menunggu']; 
 ?>
 
 <!DOCTYPE html>
@@ -126,40 +139,30 @@ $totalMenunggu = $status_counts['Menunggu'];
     <link rel="shortcut icon" href="img/zifood.png" type="image/x-icon">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <style>
-        
-
-    </style>
     <script>
         function setStatus(id, newStatus, idUser, currentTab) {
-            if (confirm(`Yakin ingin mengubah status pesanan #${id} menjadi ${newStatus}?`)) {
+            let confirmMsg = `Yakin ingin mengubah status pesanan #${id} menjadi ${newStatus}?`;
+            if (newStatus === 'Selesai') confirmMsg = `Selesaikan pesanan #${id}?`;
+
+            if (confirm(confirmMsg)) {
                 const form = document.createElement('form');
                 form.method = 'POST';
                 form.action = `pesanan.php?status=${currentTab}`;
 
-                let inputStatus = document.createElement('input');
-                inputStatus.type = 'hidden';
-                inputStatus.name = 'status';
-                inputStatus.value = newStatus;
-                form.appendChild(inputStatus);
+                const inputs = [
+                    {name: 'status', value: newStatus},
+                    {name: 'id_pesanan', value: id},
+                    {name: 'id_user_for_notif', value: idUser},
+                    {name: 'update_status', value: '1'}
+                ];
 
-                let inputId = document.createElement('input');
-                inputId.type = 'hidden';
-                inputId.name = 'id_pesanan';
-                inputId.value = id;
-                form.appendChild(inputId);
-
-                let inputUser = document.createElement('input');
-                inputUser.type = 'hidden';
-                inputUser.name = 'id_user_for_notif';
-                inputUser.value = idUser;
-                form.appendChild(inputUser);
-
-                let inputUpdate = document.createElement('input');
-                inputUpdate.type = 'hidden';
-                inputUpdate.name = 'update_status';
-                inputUpdate.value = '1';
-                form.appendChild(inputUpdate);
+                inputs.forEach(data => {
+                    let input = document.createElement('input');
+                    input.type = 'hidden';
+                    input.name = data.name;
+                    input.value = data.value;
+                    form.appendChild(input);
+                });
 
                 document.body.appendChild(form);
                 form.submit();
@@ -196,7 +199,6 @@ $totalMenunggu = $status_counts['Menunggu'];
 
     <div class="main-content">
         
-    
         <div class="header-section">
             <h2>Kelola Pesanan</h2>
         </div>
@@ -205,15 +207,14 @@ $totalMenunggu = $status_counts['Menunggu'];
             <?php 
             $statuses = ['All', 'Menunggu', 'Dikonfirmasi', 'Dine-in', 'Ditolak', 'Selesai'];
             foreach ($statuses as $status): 
-                if (isset($status_counts[$status])): 
             ?>
                 <button class="tab-button <?= $current_status === $status ? 'active' : ''; ?>" onclick="filterStatus('<?= $status; ?>')">
-                    <?= $status; ?> <span style="font-size: 11px; background: #eee; padding: 2px 6px; border-radius: 10px; margin-left: 5px;"><?= $status_counts[$status]; ?></span>
+                    <?= $status; ?> 
+                    <span style="font-size: 11px; background: #eee; padding: 2px 6px; border-radius: 10px; margin-left: 5px;">
+                        <?= $status_counts[$status] ?? 0; ?>
+                    </span>
                 </button>
-            <?php 
-                endif;
-            endforeach; 
-            ?>
+            <?php endforeach; ?>
         </div>
         
         <table>
@@ -222,7 +223,8 @@ $totalMenunggu = $status_counts['Menunggu'];
                     <th style="width: 5%;">ID</th>
                     <th style="width: 12%;">Waktu</th>
                     <th style="width: 15%;">Pemesan</th>
-                    <th style="width: 20%;">Alamat / Meja</th> <th style="width: 15%;">Catatan</th>
+                    <th style="width: 20%;">Alamat / Meja</th> 
+                    <th style="width: 15%;">Catatan</th>
                     <th style="width: 18%;">Detail Item</th>
                     <th style="width: 5%;">Status</th>
                     <th style="width: 10%;">Aksi</th>
@@ -242,16 +244,24 @@ $totalMenunggu = $status_counts['Menunggu'];
                             <small>ID: <?= $row['id_user']; ?></small>
                             
                             <?php if ($row['metode'] === 'Bayar di Tempat (COD)' && !empty($row['no_hp'])): ?>
-                                <small style="color: var(--success-color); font-weight: 500; margin-top: 5px; display: inline-block;">
+                                <?php
+                                    // Format nomor HP agar diawali '62'
+                                    $nomor_wa = $row['no_hp'];
+                                    if (substr($nomor_wa, 0, 1) == '0') {
+                                        $nomor_wa = '62' . substr($nomor_wa, 1);
+                                    }
+                                ?>
+                                <a href="https://wa.me/<?= $nomor_wa; ?>" target="_blank" title="Chat via WhatsApp" 
+                                   style="color: var(--success-color); font-weight: 500; margin-top: 5px; display: inline-block; text-decoration: none;">
                                     <i class="fab fa-whatsapp"></i> <?= htmlspecialchars($row['no_hp']); ?>
-                                </small>
+                                </a>
                             <?php endif; ?>
                         </td>
                         <td>
                             <small><?= htmlspecialchars($row['alamat']); ?></small>
                             
-                            <?php if ($row['metode'] === 'Bayar di Kasir' && !empty($row['nomor_meja'])): ?>
-                                <strong style="color: var(--theme-primary); margin-top: 5px; font-size: 14px;">
+                            <?php if ($row['metode'] === 'Bayar di Kasir'): ?>
+                                <strong style="color: var(--theme-primary); margin-top: 5px; font-size: 14px; display:block;">
                                     <i class="fas fa-chair"></i> Meja: <?= htmlspecialchars($row['nomor_meja']); ?>
                                 </strong>
                             <?php endif; ?>
@@ -265,33 +275,53 @@ $totalMenunggu = $status_counts['Menunggu'];
                             <small><?= $row['metode']; ?></small>
                         </td>
                         <td>
-                            <span class="status-badge status-<?= $row['status']; ?>"><?= $row['status']; ?></span>
+                            <?php 
+                                if ($row['metode'] === 'Bayar di Kasir' && $row['status'] === 'Menunggu') {
+                                    echo '<span class="status-badge status-Dine-in">Dine-in</span>';
+                                } else {
+                                    echo '<span class="status-badge status-'.$row['status'].'">'.$row['status'].'</span>';
+                                }
+                            ?>
                         </td>
                         <td>
-                            <?php if ($row['status'] === 'Menunggu'): ?>
+                            <?php 
+                            // TOMBOL AKSI BERDASARKAN STATUS & METODE
+                            
+                            // 1. Dine-in & Menunggu -> Tombol Selesai
+                            if ($row['metode'] === 'Bayar di Kasir' && $row['status'] === 'Menunggu'): 
+                            ?>
+                                <button class="action-button btn-complete" onclick="setStatus(<?= $row['id_pesanan']; ?>, 'Selesai', <?= $row['id_user']; ?>, '<?= $current_status; ?>')">
+                                    <i class="fas fa-check-double"></i> Selesai
+                                </button>
+
+                            <?php 
+                            // 2. Online & Menunggu -> Terima / Tolak
+                            elseif ($row['status'] === 'Menunggu'): 
+                            ?>
                                 <button class="action-button btn-confirm" onclick="setStatus(<?= $row['id_pesanan']; ?>, 'Dikonfirmasi', <?= $row['id_user']; ?>, '<?= $current_status; ?>')">
                                     <i class="fas fa-check"></i> Terima
                                 </button>
                                 <button class="action-button btn-reject" onclick="setStatus(<?= $row['id_pesanan']; ?>, 'Ditolak', <?= $row['id_user']; ?>, '<?= $current_status; ?>')">
                                     <i class="fas fa-times"></i> Tolak
                                 </button>
-                            <?php elseif ($row['status'] === 'Dikonfirmasi'): ?>
+                            
+                            <?php 
+                            // 3. Online & Dikonfirmasi -> Selesai
+                            elseif ($row['status'] === 'Dikonfirmasi'): 
+                            ?>
                                 <button class="action-button btn-complete" onclick="setStatus(<?= $row['id_pesanan']; ?>, 'Selesai', <?= $row['id_user']; ?>, '<?= $current_status; ?>')">
                                     <i class="fas fa-check-double"></i> Selesai
                                 </button>
-                            <?php elseif ($row['status'] === 'Dine-in'): ?>
-                                <button class="action-button btn-complete" onclick="setStatus(<?= $row['id_pesanan']; ?>, 'Selesai', <?= $row['id_user']; ?>, '<?= $current_status; ?>')">
-                                    <i class="fas fa-check-double"></i> Selesai
-                                </button>
+                            
                             <?php else: ?>
-                                <span style="font-size: 12px; color: #aaa;">Selesai</span>
+                                <span style="font-size: 12px; color: #aaa;">-</span>
                             <?php endif; ?>
                         </td>
                     </tr>
                     <?php endwhile; ?>
                 <?php else: ?>
                     <tr>
-                        <td colspan="8" style="text-align: center; color: #999; padding: 40px;">Tidak ada pesanan dalam status ini.</td>
+                        <td colspan="8" style="text-align: center; color: #999; padding: 40px;">Tidak ada pesanan dalam kategori ini.</td>
                     </tr>
                 <?php endif; ?>
             </tbody>
