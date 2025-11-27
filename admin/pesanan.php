@@ -139,7 +139,69 @@ $totalMenunggu = $status_counts['Menunggu'];
     <link rel="shortcut icon" href="img/zifood.png" type="image/x-icon">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        /* === CSS TAMBAHAN UNTUK SEARCH BAR === */
+        .search-wrapper {
+            position: relative;
+        }
+        
+        #searchInput {
+            padding: 10px 15px 10px 40px; /* Padding kiri lebih besar untuk icon */
+            width: 250px;
+            border: 1px solid #ddd;
+            border-radius: 20px;
+            outline: none;
+            transition: all 0.3s;
+            font-family: 'Poppins', sans-serif;
+            font-size: 14px;
+        }
+
+   
+        .search-icon {
+            position: absolute;
+            left: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #aaa;
+            font-size: 14px;
+        }
+    </style>
     <script>
+        // === FUNGSI PENCARIAN INTERAKTIF ===
+        function searchTable() {
+            // 1. Ambil inputan user
+            let input = document.getElementById("searchInput");
+            let filter = input.value.toUpperCase();
+            
+            // 2. Ambil tabel dan baris-barisnya
+            let table = document.querySelector("table");
+            let tr = table.getElementsByTagName("tr");
+
+            // 3. Looping semua baris (mulai dari 1 untuk lewati Header)
+            for (let i = 1; i < tr.length; i++) {
+                // Ambil kolom ID (index 0), Nama (index 2), dan Menu (index 5)
+                let tdId = tr[i].getElementsByTagName("td")[0];
+                let tdName = tr[i].getElementsByTagName("td")[2];
+                let tdMenu = tr[i].getElementsByTagName("td")[5];
+
+                if (tdId || tdName || tdMenu) {
+                    let txtValueId = tdId.textContent || tdId.innerText;
+                    let txtValueName = tdName.textContent || tdName.innerText;
+                    let txtValueMenu = tdMenu.textContent || tdMenu.innerText;
+
+                    // Cek apakah ada yang cocok
+                    if (txtValueId.toUpperCase().indexOf(filter) > -1 || 
+                        txtValueName.toUpperCase().indexOf(filter) > -1 || 
+                        txtValueMenu.toUpperCase().indexOf(filter) > -1) {
+                        tr[i].style.display = ""; // Tampilkan
+                    } else {
+                        tr[i].style.display = "none"; // Sembunyikan
+                    }
+                }
+            }
+        }
+
+        // === FUNGSI STATUS DAN LAINNYA ===
         function setStatus(id, newStatus, idUser, currentTab) {
             let confirmMsg = `Yakin ingin mengubah status pesanan #${id} menjadi ${newStatus}?`;
             if (newStatus === 'Selesai') confirmMsg = `Selesaikan pesanan #${id}?`;
@@ -199,8 +261,13 @@ $totalMenunggu = $status_counts['Menunggu'];
 
     <div class="main-content">
         
-        <div class="header-section">
+        <div class="header-section" style="display: flex; justify-content: space-between; align-items: center;">
             <h2>Kelola Pesanan</h2>
+            
+            <div class="search-wrapper">
+                <i class="fas fa-search search-icon"></i>
+                <input type="text" id="searchInput" onkeyup="searchTable()" placeholder="Cari ID, Nama, atau Menu...">
+            </div>
         </div>
 
         <div class="tabs">
@@ -321,7 +388,7 @@ $totalMenunggu = $status_counts['Menunggu'];
                     <?php endwhile; ?>
                 <?php else: ?>
                     <tr>
-                        <td colspan="8" style="text-align: center; color: #999; padding: 40px;">Tidak ada pesanan dalam kategori ini.</td>
+                        <td colspan="8" style="text-align: center; color: #999; padding: 40px;">Tidak ada pesanan yang sesuai.</td>
                     </tr>
                 <?php endif; ?>
             </tbody>
