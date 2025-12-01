@@ -2,9 +2,7 @@
 session_start();
 include '../koneksi.php';
 
-// ==========================================================
-// 1. LOGIKA LOGOUT
-// ==========================================================
+
 if (isset($_GET['logout'])) {
     session_destroy();
     unset($_SESSION);
@@ -12,9 +10,6 @@ if (isset($_GET['logout'])) {
     exit;
 }
 
-// ==========================================================
-// 2. CEK LOGIN ADMIN
-// ==========================================================
 if (!isset($_SESSION['id_admin'])) {
     header("Location: ../index.php");
     exit;
