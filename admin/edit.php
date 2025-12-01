@@ -2,13 +2,9 @@
 session_start();
 include '../koneksi.php';
 
-// ==========================================================
-// 1. FIX: LOGIKA LOGOUT (INTEGRASI LANGSUNG)
-// ==========================================================
 if (isset($_GET['logout'])) {
-    session_destroy();    // Hapus sesi
-    unset($_SESSION);     // Bersihkan variabel
-    // Arahkan ke halaman login (sesuaikan jika file login ada di folder luar, misal '../index.php')
+    session_destroy();    
+    unset($_SESSION);     
     header("Location: ../index.php"); 
     exit;
 }

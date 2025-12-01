@@ -2,20 +2,16 @@
 session_start();
 include '../koneksi.php';
 
-// ==========================================================
-// 1. FIX: LOGIKA LOGOUT (Letakkan Paling Atas)
-// ==========================================================
+
 if (isset($_GET['logout'])) {
-    session_destroy();    // Hapus sesi
-    unset($_SESSION);     // Bersihkan variabel
-    // Redirect ke halaman login (sesuaikan jika filenya 'login.php' atau '../index.php')
+    session_destroy();    
+    unset($_SESSION);    
+  
     header("Location: ../index.php"); 
     exit;
 }
 
-// ==========================================================
-// 2. CEK LOGIN ADMIN
-// ==========================================================
+
 if (!isset($_SESSION['id_admin'])) {
     header("Location: ../index.php");
     exit;
@@ -27,10 +23,7 @@ if (!isset($_SESSION['id_admin'])) {
 if (isset($_GET['hapus'])) {
     $id = $_GET['hapus'];
     
-    // Opsional: Hapus file fisik foto jika perlu
-    // $q_foto = mysqli_query($conn, "SELECT foto FROM menu WHERE id_menu='$id'");
-    // $d_foto = mysqli_fetch_assoc($q_foto);
-    // if ($d_foto['foto']) { unlink("../assets/img/" . $d_foto['foto']); }
+
 
     $delete = mysqli_query($conn, "DELETE FROM menu WHERE id_menu='$id'");
     
