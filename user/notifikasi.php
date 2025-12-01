@@ -2,14 +2,11 @@
 session_start();
 include '../koneksi.php';
 
-// ==========================================================
-// 1. LOGIKA LOGOUT (DITAMBAHKAN DI SINI)
-// ==========================================================
-// Jika URL memiliki parameter ?logout=true, maka sesi dihancurkan
+
 if (isset($_GET['logout'])) {
-    session_destroy();    // Hapus sesi
-    unset($_SESSION);     // Bersihkan semua variabel sesi
-    header("Location: ../index.php"); // Kembali ke halaman login utama
+    session_destroy();    
+    unset($_SESSION);     
+    header("Location: ../index.php"); 
     exit;
 }
 
@@ -33,21 +30,21 @@ if (isset($_POST['submit_rating'])) {
     // Validasi: Bintang harus antara 1 sampai 5
     if ($jumlah_bintang >= 1 && $jumlah_bintang <= 5) {
         
-        // A. Siapkan query untuk simpan rating ke tabel 'rating'
+        // Siapkan query untuk simpan rating ke tabel 'rating'
         $query_tambah_rating = "INSERT INTO rating (id_user, id_menu, nilai) 
                                 VALUES ('$id_pengguna', '$id_menu_dinilai', '$jumlah_bintang')";
         
         // Jalankan query simpan rating
         if (mysqli_query($conn, $query_tambah_rating)) {
             
-            // B. Update rata-rata rating di tabel 'menu' secara otomatis
+            // . Update rata-rata rating di tabel 'menu' secara otomatis
             // Kita pakai sub-query SQL biar database yang hitung rata-ratanya
             $query_update_rata2 = "UPDATE menu m 
                                    SET rating_rata = (SELECT IFNULL(AVG(nilai), 0) FROM rating r WHERE r.id_menu = m.id_menu) 
                                    WHERE m.id_menu = '$id_menu_dinilai'";
             mysqli_query($conn, $query_update_rata2);
             
-            // C. Hapus notifikasi karena pesanan sudah selesai dinilai
+            // Hapus notifikasi karena pesanan sudah selesai dinilai
             $query_hapus_notif = "DELETE FROM notifikasi WHERE id_pesanan='$id_pesanan_dinilai' AND id_user='$id_pengguna'";
             mysqli_query($conn, $query_hapus_notif);
             
@@ -64,7 +61,7 @@ if (isset($_POST['submit_rating'])) {
 }
 
 // ==========================================================
-// 3. TANDAI SEMUA NOTIFIKASI JADI "SUDAH DIBACA"
+// TANDAI SEMUA NOTIFIKASI JADI "SUDAH DIBACA"
 // ==========================================================
 // Setiap kali user buka halaman ini, semua notifikasi 'Belum' diubah jadi 'Sudah'
 mysqli_query($conn, "UPDATE notifikasi SET status_baca='Sudah' WHERE id_user='$id_pengguna' AND status_baca='Belum'");
@@ -74,7 +71,7 @@ $query_cek_unread = "SELECT COUNT(*) AS total FROM notifikasi WHERE id_user='$id
 $total_belum_baca = mysqli_fetch_assoc(mysqli_query($conn, $query_cek_unread))['total'] ?? 0;
 
 // ==========================================================
-// 4. AMBIL DATA NOTIFIKASI & MENU POPULER
+// AMBIL DATA NOTIFIKASI & MENU POPULER
 // ==========================================================
 // Query untuk menampilkan daftar notifikasi user
 $query_daftar_notif = "
