@@ -2,13 +2,10 @@
 session_start();
 include '../koneksi.php';
 
-// --- 1. LOGIKA LOGOUT (DIPINDAHKAN KE SINI) ---
-// Pengecekan logout harus dilakukan sebelum output HTML apa pun
+
 if (isset($_GET['logout'])) {
     session_destroy();
     unset($_SESSION);
-    // PERHATIAN: Cek apakah file login ada di folder yang sama ('login.php') 
-    // atau di folder luar ('../index.php'). Sesuaikan jika perlu.
     header("Location: ../index.php"); 
     exit;
 }
@@ -41,7 +38,7 @@ $pesananBaru = mysqli_query($conn, "SELECT p.*, u.nama FROM pesanan p JOIN users
 $menuTop = mysqli_query($conn, "SELECT * FROM menu ORDER BY rating_rata DESC LIMIT 5");
 
 
-// 💰 LOGIKA GRAFIK PENDAPATAN
+// LOGIKA GRAFIK PENDAPATAN
 $grafikPendapatanResult = mysqli_query($conn, "
     SELECT 
         DATE_FORMAT(tanggal, '%Y-%m-%d') AS hari, 
@@ -80,10 +77,7 @@ $jsonPendapatan = json_encode($dataPendapatan);
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/date-fns@2/index.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@2/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
-    
-    <style>
-       
-    </style>
+   
 
     <script>
         function logoutConfirm() {
