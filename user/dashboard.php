@@ -2,19 +2,15 @@
 session_start();
 include '../koneksi.php';
 
-// ==========================================================
-// 1. LOGIKA LOGOUT (INTEGRASI LANGSUNG)
-// ==========================================================
+
 if (isset($_GET['logout'])) {
-    session_destroy();    // Hapus semua data sesi
-    unset($_SESSION);     // Pastikan variabel sesi hilang dari memori
-    header("Location: ../index.php"); // Kembali ke halaman login/index utama
+    session_destroy();    
+    unset($_SESSION);     
+    header("Location: ../index.php"); 
     exit;
 }
 
-// ==========================================================
-// 2. CEK LOGIN
-// ==========================================================
+
 if (!isset($_SESSION['id_user'])) {
     header("Location:../index.php");
     exit;

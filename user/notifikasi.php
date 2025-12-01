@@ -2,16 +2,27 @@
 session_start();
 include '../koneksi.php';
 
+// ==========================================================
+// 1. LOGIKA LOGOUT (DITAMBAHKAN DI SINI)
+// ==========================================================
+// Jika URL memiliki parameter ?logout=true, maka sesi dihancurkan
+if (isset($_GET['logout'])) {
+    session_destroy();    // Hapus sesi
+    unset($_SESSION);     // Bersihkan semua variabel sesi
+    header("Location: ../index.php"); // Kembali ke halaman login utama
+    exit;
+}
+
 // Cek apakah user sudah login
 if (!isset($_SESSION['id_user'])) {
-    header("Location: index.php");
+    header("Location: ../index.php");
     exit;
 }
 
 $id_pengguna = $_SESSION['id_user'];
 
 // ==========================================================
-// 1. LOGIKA KIRIM (SUBMIT) RATING BARU
+// 2. LOGIKA KIRIM (SUBMIT) RATING BARU
 // ==========================================================
 if (isset($_POST['submit_rating'])) {
     // Ambil data dari form (casting ke integer biar aman)
@@ -53,7 +64,7 @@ if (isset($_POST['submit_rating'])) {
 }
 
 // ==========================================================
-// 2. TANDAI SEMUA NOTIFIKASI JADI "SUDAH DIBACA"
+// 3. TANDAI SEMUA NOTIFIKASI JADI "SUDAH DIBACA"
 // ==========================================================
 // Setiap kali user buka halaman ini, semua notifikasi 'Belum' diubah jadi 'Sudah'
 mysqli_query($conn, "UPDATE notifikasi SET status_baca='Sudah' WHERE id_user='$id_pengguna' AND status_baca='Belum'");
@@ -63,7 +74,7 @@ $query_cek_unread = "SELECT COUNT(*) AS total FROM notifikasi WHERE id_user='$id
 $total_belum_baca = mysqli_fetch_assoc(mysqli_query($conn, $query_cek_unread))['total'] ?? 0;
 
 // ==========================================================
-// 3. AMBIL DATA NOTIFIKASI & MENU POPULER
+// 4. AMBIL DATA NOTIFIKASI & MENU POPULER
 // ==========================================================
 // Query untuk menampilkan daftar notifikasi user
 $query_daftar_notif = "
@@ -114,7 +125,7 @@ function hitung_waktu_lalu($timestamp) {
     <link rel="shortcut icon" href="img/zifood.png" type="image/x-icon">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    </head>
+</head>
 <body>
 
 <div class="dashboard-layout">
@@ -129,7 +140,7 @@ function hitung_waktu_lalu($timestamp) {
                 <span class="notification-badge"><?= $total_belum_baca; ?></span>
             <?php endif; ?>
         </a>
-        <a href="logout.php" class="nav-link" onclick="return confirm('Logout?')" title="Logout"><i class="fas fa-sign-out-alt"></i></a>
+        <a href="?logout=true" class="nav-link" onclick="return confirm('Yakin mau logout?')" title="Logout"><i class="fas fa-sign-out-alt"></i></a>
     </div>
 
     <div class="main-content">
