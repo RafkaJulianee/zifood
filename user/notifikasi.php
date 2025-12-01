@@ -2,7 +2,9 @@
 session_start();
 include '../koneksi.php';
 
-
+// ==========================================================
+// 1. LOGIKA LOGOUT
+// ==========================================================
 if (isset($_GET['logout'])) {
     session_destroy();    
     unset($_SESSION);     
@@ -22,36 +24,27 @@ $id_pengguna = $_SESSION['id_user'];
 // 2. LOGIKA KIRIM (SUBMIT) RATING BARU
 // ==========================================================
 if (isset($_POST['submit_rating'])) {
-    // Ambil data dari form (casting ke integer biar aman)
     $id_pesanan_dinilai = (int)$_POST['id_pesanan_rated'];
     $id_menu_dinilai    = (int)$_POST['id_menu_rated'];
     $jumlah_bintang     = (int)$_POST['rating_value'];
 
-    // Validasi: Bintang harus antara 1 sampai 5
     if ($jumlah_bintang >= 1 && $jumlah_bintang <= 5) {
-        
-        // Siapkan query untuk simpan rating ke tabel 'rating'
         $query_tambah_rating = "INSERT INTO rating (id_user, id_menu, nilai) 
                                 VALUES ('$id_pengguna', '$id_menu_dinilai', '$jumlah_bintang')";
         
-        // Jalankan query simpan rating
         if (mysqli_query($conn, $query_tambah_rating)) {
-            
-            // . Update rata-rata rating di tabel 'menu' secara otomatis
-            // Kita pakai sub-query SQL biar database yang hitung rata-ratanya
+            // Update rata-rata rating
             $query_update_rata2 = "UPDATE menu m 
                                    SET rating_rata = (SELECT IFNULL(AVG(nilai), 0) FROM rating r WHERE r.id_menu = m.id_menu) 
                                    WHERE m.id_menu = '$id_menu_dinilai'";
             mysqli_query($conn, $query_update_rata2);
             
-            // Hapus notifikasi karena pesanan sudah selesai dinilai
+            // Hapus notifikasi
             $query_hapus_notif = "DELETE FROM notifikasi WHERE id_pesanan='$id_pesanan_dinilai' AND id_user='$id_pengguna'";
             mysqli_query($conn, $query_hapus_notif);
             
-            // Redirect (segarkan halaman) setelah berhasil
             echo "<script>alert('Terima kasih! Rating bintang $jumlah_bintang berhasil disimpan.'); window.location='notifikasi.php';</script>";
             exit;
-
         } else {
             echo "<script>alert('Gagal menyimpan rating. Error: " . mysqli_error($conn) . "');</script>";
         }
@@ -61,19 +54,16 @@ if (isset($_POST['submit_rating'])) {
 }
 
 // ==========================================================
-// TANDAI SEMUA NOTIFIKASI JADI "SUDAH DIBACA"
+// TANDAI NOTIFIKASI JADI "SUDAH DIBACA"
 // ==========================================================
-// Setiap kali user buka halaman ini, semua notifikasi 'Belum' diubah jadi 'Sudah'
 mysqli_query($conn, "UPDATE notifikasi SET status_baca='Sudah' WHERE id_user='$id_pengguna' AND status_baca='Belum'");
 
-// Hitung ulang sisa notifikasi yang belum dibaca (Harusnya jadi 0 setelah kode di atas jalan, tapi buat jaga-jaga)
 $query_cek_unread = "SELECT COUNT(*) AS total FROM notifikasi WHERE id_user='$id_pengguna' AND status_baca='Belum'";
 $total_belum_baca = mysqli_fetch_assoc(mysqli_query($conn, $query_cek_unread))['total'] ?? 0;
 
 // ==========================================================
-// AMBIL DATA NOTIFIKASI & MENU POPULER
+// AMBIL DATA NOTIFIKASI
 // ==========================================================
-// Query untuk menampilkan daftar notifikasi user
 $query_daftar_notif = "
     SELECT 
         n.*,
@@ -93,7 +83,7 @@ $query_daftar_notif = "
 ";
 $hasil_notifikasi = mysqli_query($conn, $query_daftar_notif);
 
-// Query untuk menu populer (Top 5) di sidebar kanan
+// Data Populer
 $query_populer = "
     SELECT m.*, COUNT(p.id_menu) AS total_orders 
     FROM menu m JOIN pesanan p ON m.id_menu = p.id_menu
@@ -101,14 +91,11 @@ $query_populer = "
 ";
 $hasil_populer = mysqli_query($conn, $query_populer);
 
-// Fungsi bantu untuk format waktu (Contoh: "5 menit lalu")
 function hitung_waktu_lalu($timestamp) {
     $selisih = time() - strtotime($timestamp);
-    
     if ($selisih < 60) return "Baru saja";
     if ($selisih < 3600) return floor($selisih / 60) . " menit lalu";
     if ($selisih < 86400) return floor($selisih / 3600) . " jam lalu";
-    
     return date('d M Y H:i', strtotime($timestamp));
 }
 ?>
@@ -149,8 +136,24 @@ function hitung_waktu_lalu($timestamp) {
             <?php if (mysqli_num_rows($hasil_notifikasi) > 0): ?>
                 <?php while ($data_notif = mysqli_fetch_assoc($hasil_notifikasi)): ?>
                     <?php 
-                        // Cek apakah pesan mengandung kata 'selesai' untuk memunculkan tombol rating
+                        // Cek status selesai
                         $status_selesai = stripos($data_notif['pesan'], 'selesai') !== false;
+
+                        // --- MODIFIKASI: GANTI ID MENJADI NAMA MENU ---
+                        // Kita ambil pesan asli dari database, lalu kita manipulasi string-nya
+                        $pesan_tampil = $data_notif['pesan'];
+                        
+                        // Cek apakah nama menu tersedia (tidak null)
+                        if (!empty($data_notif['nama_menu'])) {
+                            // Teks yang dicari: "(ID #123)"
+                            $pola_lama = "(ID #" . $data_notif['id_pesanan'] . ")";
+                            // Teks pengganti: "(Nasi Goreng)"
+                            $pola_baru = "(" . $data_notif['nama_menu'] . ")";
+                            
+                            // Lakukan penggantian (Replace)
+                            $pesan_tampil = str_replace($pola_lama, $pola_baru, $pesan_tampil);
+                        }
+                        // ----------------------------------------------
                     ?>
                     
                     <li class="notif-item"> 
@@ -158,7 +161,7 @@ function hitung_waktu_lalu($timestamp) {
                         
                         <div class="notif-content">
                             <div class="notif-message">
-                                <?= htmlspecialchars($data_notif['pesan']); ?>
+                                <?= htmlspecialchars($pesan_tampil); ?>
                             </div>
                             <div class="notif-time">
                                 <i class="far fa-clock"></i> <?= hitung_waktu_lalu($data_notif['waktu']); ?>
@@ -221,27 +224,22 @@ function hitung_waktu_lalu($timestamp) {
 
 <script>
     function pilihBintang(idPesanan, nilai) {
-        // Mengambil elemen berdasarkan ID unik per pesanan
         const wadah = document.getElementById('wadah-rating-' + idPesanan);
         const tombolBintang = wadah.querySelectorAll('.star-btn');
         const inputTersembunyi = wadah.querySelector('.input-nilai-bintang');
         const tombolKirim = wadah.querySelector('.btn-kirim-rating');
 
-        // Update nilai pada input hidden
         inputTersembunyi.value = nilai;
-        
-        // Aktifkan tombol kirim
         tombolKirim.disabled = false;
         tombolKirim.innerHTML = "Kirim " + nilai + " Bintang";
 
-        // Warnai bintang sesuai pilihan
         tombolBintang.forEach((bintang, index) => {
             if (index < nilai) {
                 bintang.classList.add('rated');
-                bintang.style.color = '#ffc107'; // Kuning emas
+                bintang.style.color = '#ffc107'; 
             } else {
                 bintang.classList.remove('rated');
-                bintang.style.color = '#ddd'; // Abu-abu
+                bintang.style.color = '#ddd'; 
             }
         });
     }

@@ -61,8 +61,10 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 <body>
     <div class="main-container">
         <div class="login-side">
-            <h1 class="welcome-text">Create Account</h1>
-            <p class="tagline">Join ZIFOOD now to start ordering your favorite meals.</p>
+            <h1 class="welcome-text">Buat Akun</h1>
+            <p class="tagline">
+           Bergabunglah dengan ZiFood sekarang untuk mulai memesan makanan favorit Anda.
+            </p>
 
             <form method="POST" action="" onsubmit="return validateForm()">
                 <input type="text" name="nama" placeholder="Nama Lengkap" required class="input-field">
@@ -82,9 +84,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         <div class="illustration-side">
             <img src="img/foodimg1.jpeg" alt="Delicious Food" class="illustration-img"> 
             
-            <div class="marketing-text">
-                <h3>Make your ordering easier and organized with ZIFOOD</h3>
-            </div>
+         
         </div>
     </div>
 </body>

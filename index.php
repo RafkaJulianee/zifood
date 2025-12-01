@@ -72,9 +72,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
         <div class="illustration-side">
             <img src="user/img/foodimg1.jpeg" alt="Delicious Food" class="illustration-img"> 
-            <div class="marketing-text">
-                <h3>Make your ordering easier and organized with ZIFOOD</h3>
-            </div>
+          
         </div>
     </div>
 
