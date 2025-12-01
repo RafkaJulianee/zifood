@@ -1,6 +1,6 @@
 <?php
 session_start();
-include '../koneksi.php'; // Pastikan path ini sesuai dengan struktur foldermu
+include '../koneksi.php'; //
 
 // Cek login dan pastikan ada menu yang dipesan
 if (!isset($_SESSION['id_user']) || !isset($_GET['id_menu'])) {
@@ -141,15 +141,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <div class="grup-formulir">
                     <h3>2. Detail Pengiriman</h3>
                     
-                    <div style="background: #e3f2fd; padding: 15px; border-radius: 8px; margin-bottom: 15px; border: 1px solid #90caf9;">
-                        <label style="color: #1565c0; font-weight:bold;">📍 Cek Jarak Pengiriman</label>
-                        <p style="font-size: 12px; margin-bottom: 10px; color: #555;">
-                            Wajib cek lokasi untuk menentukan ongkir. Maksimal jarak pengiriman adalah <strong>5 KM</strong>.
-                        </p>
-                        <button type="button" onclick="cekLokasi()" class="tombol-cek-lokasi" style="background: #1976d2; color: white; border: none; padding: 8px 15px; border-radius: 5px; cursor: pointer; font-size: 13px;">
-                            <i class="fas fa-map-marked-alt"></i> Cek Lokasi Saya
+                    <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 20px; padding: 10px; border: 1px dashed #ddd; border-radius: 10px;">
+                        
+                        <button type="button" onclick="cekLokasi()" title="Cek Lokasi Saya" 
+                                style="background: #4CAF50; color: white; border: none; width: 50px; height: 50px; border-radius: 50%; cursor: pointer; font-size: 20px; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 6px rgba(0,0,0,0.1); transition: transform 0.2s;">
+                            <i class="fas fa-map-marker-alt"></i>
                         </button>
-                        <p id="hasil_cek_lokasi" style="margin-top: 10px; font-size: 13px; font-weight: 600;"></p>
+
+                        <div style="flex: 1;">
+                            <label style="font-size: 14px; font-weight: 600; color: #333; display: block; margin-bottom: 2px;">Cek Lokasi</label>
+                            <span id="hasil_cek_lokasi" style="font-size: 12px; color: #666; display: block; line-height: 1.4;">
+                                Klik ikon hijau untuk hitung ongkir otomatis (Max 5 KM).
+                            </span>
+                        </div>
+
                     </div>
                     <label>Pilih Alamat Pengiriman</label>
                     <div class="ganti-opsi">
