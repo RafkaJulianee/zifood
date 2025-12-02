@@ -47,7 +47,7 @@ if (isset($_POST['update'])) {
         $foto = time() . "_" . $_FILES['foto']['name'];
         $tmp = $_FILES['foto']['tmp_name'];
         move_uploaded_file($tmp, "../assets/img/" . $foto);
-        $fotoQuery = ", foto='$foto'"; // Tambahkan ke query update hanya jika ada file baru
+        $fotoQuery = ", foto='$foto'"; 
     }
 
     $update = mysqli_query($conn, "UPDATE menu SET nama_menu='$nama', kategori='$kategori', harga='$harga', deskripsi='$deskripsi' $fotoQuery WHERE id_menu='$id'");

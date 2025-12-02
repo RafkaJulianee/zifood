@@ -1,15 +1,13 @@
 <?php
-// Path ke koneksi.php
+
 include 'koneksi.php'; 
 session_start();
 
 if ($_SERVER["REQUEST_METHOD"] === "POST") {
-    // Mengambil data input dan mengubah variabel ke Bahasa Indonesia
     $nama_pengguna = mysqli_real_escape_string($conn, $_POST['username']);
     $kata_sandi    = mysqli_real_escape_string($conn, $_POST['password']); 
 
     // 1. CEK KE TABEL ADMIN
-    // Catatan: Nama kolom di database ('username', 'password') diasumsikan tetap bahasa Inggris
     $kueri_admin = "SELECT * FROM admin WHERE username='$nama_pengguna' AND password='$kata_sandi'";
     $hasil_admin = mysqli_query($conn, $kueri_admin);
 

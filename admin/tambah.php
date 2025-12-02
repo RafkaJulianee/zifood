@@ -10,14 +10,13 @@ if (isset($_GET['logout'])) {
     exit;
 }
 
-// ==========================================================
-// 2. CEK LOGIN ADMIN
-// ==========================================================
+// Jika sesi 'id_admin' tidak ada (belum login)
 if (!isset($_SESSION['id_admin'])) {
+    // kembali ke halaman login utama
     header("Location: ../index.php");
+    // Hentikan eksekusi script agar halaman tidak bisa diakses
     exit;
 }
-
 // ========== LOGIKA CREATE (Menambahkan Menu Baru) ==========
 if (isset($_POST['tambah'])) {
     $nama = mysqli_real_escape_string($conn, $_POST['nama_menu']); 
@@ -32,7 +31,7 @@ if (isset($_POST['tambah'])) {
         move_uploaded_file($_FILES['foto']['tmp_name'], "../assets/img/" . $foto);
     }
 
-    // Query INSERT data menu
+    //untuk menyimpan data menu baru ke dalam tabel database
     $query_insert = "INSERT INTO menu (nama_menu, kategori, harga, deskripsi, foto) 
                      VALUES ('$nama', '$kategori', '$harga', '$deskripsi', '$foto')";
                       
