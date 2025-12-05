@@ -1,6 +1,6 @@
 <?php
 session_start();
-include '../koneksi.php'; //
+include '../koneksi.php'; 
 
 // Cek login dan pastikan ada menu yang dipesan
 if (!isset($_SESSION['id_user']) || !isset($_GET['id_menu'])) {
@@ -27,7 +27,7 @@ $nama_belakang = $pecah_nama[1] ?? '';
 
 // 3. Logika Perhitungan Awal
 $subtotal = $harga_satuan * $jumlah;
-$ongkir_awal = 0;
+$ongkir_awal = 0; // Nanti diupdate via JS
 $total = $subtotal + $ongkir_awal;
 
 // Logika Submit Pesanan
@@ -141,21 +141,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <div class="grup-formulir">
                     <h3>2. Detail Pengiriman</h3>
                     
-                    <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 20px; padding: 10px; border: 1px dashed #ddd; border-radius: 10px;">
-                        
-                        <button type="button" onclick="cekLokasi()" title="Cek Lokasi Saya" 
-                                style="background: #4CAF50; color: white; border: none; width: 50px; height: 50px; border-radius: 50%; cursor: pointer; font-size: 20px; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 6px rgba(0,0,0,0.1); transition: transform 0.2s;">
-                            <i class="fas fa-map-marker-alt"></i>
-                        </button>
-
-                        <div style="flex: 1;">
-                            <label style="font-size: 14px; font-weight: 600; color: #333; display: block; margin-bottom: 2px;">Cek Lokasi</label>
-                            <span id="hasil_cek_lokasi" style="font-size: 12px; color: #666; display: block; line-height: 1.4;">
-                                Klik ikon hijau untuk hitung ongkir otomatis (Max 5 KM).
-                            </span>
-                        </div>
-
-                    </div>
                     <label>Pilih Alamat Pengiriman</label>
                     <div class="ganti-opsi">
                         <button type="button" id="tombol_alamat_terdaftar" onclick="gantiAlamat(true)"><i class="fas fa-home"></i> Alamat Terdaftar</button>
@@ -264,106 +249,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 </form>
 
 <script>
-    // === KONFIGURASI RESTORAN ===
-    const LAT_RESTORAN = -7.185874778722931; // Koordinat Baru
-    const LNG_RESTORAN = 108.3629497689564; 
-
     // Data PHP
     const HARGA_SATUAN = <?= $harga_satuan; ?>;
     const JUMLAH = <?= $jumlah; ?>; 
     const ALAMAT_TERDAFTAR = "<?= addslashes($data_user['alamat']); ?>";
     
+    // --- KONFIGURASI ONGKIR ---
+    // Karena GPS dihapus, kita pakai ongkir rata/flat.
+    // Ubah angka 5000 menjadi 0 jika ingin Gratis Ongkir.
+    const ONGKIR_FLAT = 5000; 
+
     // Variabel Global
-    let ongkirSaatIni = 0;
-    let jarakKm = 0;
-    let sudahCekLokasi = false;
+    let ongkirSaatIni = ONGKIR_FLAT; 
 
     // Format Rupiah
     const formatRupiah = new Intl.NumberFormat('id-ID', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
 
-    // --- 1. FUNGSI GEOLOKASI ---
-    function cekLokasi() {
-        const statusTxt = document.getElementById('hasil_cek_lokasi');
-        statusTxt.innerHTML = "Sedang melacak lokasi... <i class='fas fa-spinner fa-spin'></i>";
-        statusTxt.style.color = "#666";
-
-        if (navigator.geolocation) {
-            navigator.geolocation.getCurrentPosition(suksesLokasi, errorLokasi);
-        } else {
-            statusTxt.innerHTML = "Browser Anda tidak mendukung Geolocation.";
-        }
-    }
-
-    function suksesLokasi(position) {
-        const userLat = position.coords.latitude;
-        const userLng = position.coords.longitude;
-
-        // Hitung Jarak dengan Rumus Haversine
-        jarakKm = hitungJarak(LAT_RESTORAN, LNG_RESTORAN, userLat, userLng);
-        
-        // --- LOGIKA ONGKIR SESUAI REQUEST ---
-        let pesan = "";
-        let warna = "green";
-        let valid = true;
-
-        if (jarakKm > 5) {
-            ongkirSaatIni = 0;
-            pesan = `Jarak: ${jarakKm.toFixed(2)} KM. Maaf, lokasi Anda terlalu jauh (> 5 KM). Tidak bisa pesan delivery.`;
-            warna = "red";
-            valid = false;
-        } else if (jarakKm <= 1) {
-            ongkirSaatIni = 0;
-            pesan = `Jarak: ${jarakKm.toFixed(2)} KM. Dekat sekali! Ongkir GRATIS.`;
-        } else if (jarakKm <= 2) {
-            ongkirSaatIni = 3000;
-            pesan = `Jarak: ${jarakKm.toFixed(2)} KM. Ongkir: Rp3.000`;
-        } else if (jarakKm <= 3) {
-            ongkirSaatIni = 5000;
-            pesan = `Jarak: ${jarakKm.toFixed(2)} KM. Ongkir: Rp5.000`;
-        } else if (jarakKm <= 4) {
-            ongkirSaatIni = 7000;
-            pesan = `Jarak: ${jarakKm.toFixed(2)} KM. Ongkir: Rp7.000`;
-        } else { // Jarak 4.xx sampai 5 KM
-            ongkirSaatIni = 10000;
-            pesan = `Jarak: ${jarakKm.toFixed(2)} KM. Ongkir: Rp10.000`;
-        }
-
-        // Update Tampilan Status
-        const statusTxt = document.getElementById('hasil_cek_lokasi');
-        statusTxt.innerHTML = pesan;
-        statusTxt.style.color = warna;
-        
-        // Simpan status validasi
-        sudahCekLokasi = valid;
-
-        // Update Harga
-        perbaruiOngkirDanTotal();
-        updateTombolCheckout();
-    }
-
-    function errorLokasi() {
-        document.getElementById('hasil_cek_lokasi').innerHTML = "Gagal mengambil lokasi. Pastikan GPS aktif dan izinkan akses lokasi.";
-        sudahCekLokasi = false;
-        updateTombolCheckout();
-    }
-
-    // Rumus Matematika Menghitung Jarak (Haversine Formula)
-    function hitungJarak(lat1, lon1, lat2, lon2) {
-        const R = 6371; // Radius bumi dalam KM
-        const dLat = (lat2 - lat1) * (Math.PI / 180);
-        const dLon = (lon2 - lon1) * (Math.PI / 180);
-        const a = 
-            Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-            Math.cos(lat1 * (Math.PI / 180)) * Math.cos(lat2 * (Math.PI / 180)) * Math.sin(dLon / 2) * Math.sin(dLon / 2);
-        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-        return R * c; // Hasil dalam KM
-    }
-
-    // --- 2. FUNGSI UPDATE UI ---
+    // --- FUNGSI UPDATE UI ---
     function perbaruiOngkirDanTotal() {
-        // Jika mode offline, ongkir selalu 0
-        if (document.getElementById('mode_pemesanan').value === 'offline') {
+        const mode = document.getElementById('mode_pemesanan').value;
+
+        // Jika mode offline, ongkir selalu 0. Jika online, pakai ONGKIR_FLAT
+        if (mode === 'offline') {
             ongkirSaatIni = 0;
+        } else {
+            ongkirSaatIni = ONGKIR_FLAT;
         }
 
         const subtotal = HARGA_SATUAN * JUMLAH;
@@ -379,7 +289,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         document.getElementById('input_ongkir_final').value = ongkirSaatIni;
         document.getElementById('input_total_final').value = total;
         
-        // Ambil nilai alamat dari textarea (jika ada perubahan manual)
+        // Ambil nilai alamat dari textarea
         const alamatInput = document.getElementById('input_alamat_delivery');
         if(alamatInput) {
              document.getElementById('input_alamat_final').value = alamatInput.value;
@@ -387,26 +297,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     function updateTombolCheckout() {
-        const mode = document.getElementById('mode_pemesanan').value;
+        // Tombol selalu aktif karena tidak ada validasi GPS
         const btn = document.getElementById('tombol_submit_checkout');
-
-        if (mode === 'online') {
-            // Syarat: Harus sudah cek lokasi DAN lokasi valid (<= 5km)
-            if (sudahCekLokasi) {
-                btn.disabled = false;
-                btn.style.backgroundColor = "var(--warna-primer)";
-                btn.innerText = "Checkout & Pesan";
-            } else {
-                btn.disabled = true;
-                btn.style.backgroundColor = "#ccc";
-                btn.innerText = "Cek Lokasi Dulu / Jarak Terlalu Jauh";
-            }
-        } else {
-            // Kalau Offline/Dine-in selalu boleh
-            btn.disabled = false;
-            btn.style.backgroundColor = "var(--warna-primer)";
-            btn.innerText = "Checkout & Pesan";
-        }
+        btn.disabled = false;
+        btn.style.backgroundColor = "var(--warna-primer)";
+        btn.innerText = "Checkout & Pesan";
     }
 
     function gantiAlamat(gunakanTerdaftar) {
@@ -418,7 +313,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         if (gunakanTerdaftar) {
             inputAlamatEl.value = ALAMAT_TERDAFTAR;
-            // inputAlamatEl.disabled = true; 
             tombolTerdaftar.classList.add('active');
             tombolBaru.classList.remove('active');
         } else {
@@ -450,11 +344,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             document.querySelector('input[name="telepon_whatsapp"]').required = false;
             document.querySelector('textarea[name="input_alamat_delivery"]').required = false;
 
-            // Reset ongkir jadi 0
-            ongkirSaatIni = 0;
-            perbaruiOngkirDanTotal();
-            updateTombolCheckout(); // Selalu aktif di mode offline
-
         } else { // Mode 'online'
             formOnline.style.display = 'block';
             formOffline.style.display = 'none';
@@ -465,11 +354,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             document.querySelector('input[name="telepon_whatsapp"]').required = true;
             document.querySelector('textarea[name="input_alamat_delivery"]').required = true;
-
-            // Cek ulang tombol checkout (mungkin user belum cek lokasi)
-            updateTombolCheckout();
-            perbaruiOngkirDanTotal();
         }
+
+        // Panggil fungsi hitung ulang saat mode berubah
+        perbaruiOngkirDanTotal();
+        updateTombolCheckout();
     }
 
     // --- INISIALISASI SAAT LOAD ---
@@ -481,7 +370,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             document.getElementById('input_alamat_final').value = this.value;
         });
         
-        // Panggil ini agar tombol checkout disable di awal (sebelum cek lokasi)
+        // Hitung total awal
+        perbaruiOngkirDanTotal();
         updateTombolCheckout();
     });
 </script>
