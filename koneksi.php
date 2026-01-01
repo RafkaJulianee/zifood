@@ -10,11 +10,3 @@ if (!$conn) {
     die('Koneksi gagal: ' . mysqli_connect_error());
 }
 ?>
-<p></p>
-n
-
-<p></p>
-<p>
-    
-</p>
-<label for=""></label>
