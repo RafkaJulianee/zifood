@@ -1,3 +1,5 @@
 
 
-name = input("Input Your Name")
+name = input("Input Your Name: ")
+password = input ('Password:')
+
